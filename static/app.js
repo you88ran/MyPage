@@ -428,10 +428,10 @@ async function loadNavigation() {
         navigationElement.innerHTML = html;
         groupNavElement.innerHTML = navHtml;
 
-        // 同步手机端目录
-        const mobileNavList = document.getElementById('mobileNavList');
-        if (mobileNavList) {
-            mobileNavList.innerHTML = navHtml;
+        // 同步手机端抽屉目录
+        const mobileDrawerNav = document.getElementById('mobileDrawerNav');
+        if (mobileDrawerNav) {
+            mobileDrawerNav.innerHTML = navHtml;
         }
         
         await loadIcons();
@@ -786,5 +786,36 @@ window.addEventListener("scroll", function() {
         btn.classList.add("show");
     } else {
         btn.classList.remove("show");
+    }
+});
+
+// 手机端左侧抽屉
+document.addEventListener("DOMContentLoaded", function() {
+    const menuBtn = document.getElementById("mobileMenuBtn");
+    const drawer = document.getElementById("mobileDrawer");
+    const overlay = document.getElementById("mobileDrawerOverlay");
+    const closeBtn = document.getElementById("mobileDrawerClose");
+
+    if (menuBtn && drawer) {
+        function openDrawer() {
+            drawer.classList.add("active");
+            document.body.style.overflow = "hidden";
+        }
+
+        function closeDrawer() {
+            drawer.classList.remove("active");
+            document.body.style.overflow = "";
+        }
+
+        menuBtn.addEventListener("click", openDrawer);
+        if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+        if (overlay) overlay.addEventListener("click", closeDrawer);
+
+        // 点击导航项后关闭抽屉
+        document.addEventListener("click", function(e) {
+            if (drawer.classList.contains("active") && e.target.closest(".mobile-drawer-nav .nav-item")) {
+                closeDrawer();
+            }
+        });
     }
 });
