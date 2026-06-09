@@ -81,11 +81,6 @@ body {
 .nav-item:hover { background: #edf2f7; color: #2d3748; }
 .nav-item.active { background: #e6f0fb; color: #4299e1; font-weight: 500; }
 
-/* 手机端折叠目录 — 桌面端隐藏 */
-.mobile-nav {
-    display: none;
-}
-
 /* 主内容区 */
 .main-content {
     min-width: 0; /* 防止grid子元素溢出 */
@@ -695,68 +690,6 @@ body {
     /* 桌面侧边栏隐藏 */
     .nav-sidebar { display: none; }
 
-    /* 手机端折叠目录显示 */
-    .mobile-nav {
-        display: inline-block;
-        background: rgba(255,255,255,0.95);
-        border-radius: 10px;
-        margin-bottom: 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        border: 1px solid rgba(226,232,240,0.8);
-        position: relative;
-    }
-
-    .mobile-nav-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 8px 12px;
-        font-size: 13px;
-        font-weight: 600;
-        color: #2d3748;
-        cursor: pointer;
-        user-select: none;
-        gap: 6px;
-        white-space: nowrap;
-    }
-
-    .mobile-nav-title span {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .mobile-nav-title .fa-list { color: #4299e1; }
-
-    .mobile-nav-icon {
-        font-size: 12px;
-        color: #a0aec0;
-        transition: transform 0.3s;
-    }
-
-    .mobile-nav-list {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.3s ease;
-        border-top: 1px solid #e2e8f0;
-        position: absolute;
-        top: 100%;
-        right: 0;
-        min-width: 200px;
-        background: white;
-        border-radius: 0 0 10px 10px;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-        z-index: 200;
-    }
-
-    .mobile-nav-list .nav-item {
-        border-radius: 0;
-        padding: 10px 16px;
-        border-bottom: 1px solid #f7fafc;
-    }
-
-    .mobile-nav-list .nav-item:last-child { border-bottom: none; }
-
     .header {
         position: sticky;
         top: 0;
@@ -800,6 +733,111 @@ body {
 
     .link-icon {
         width: 28px; height: 28px; min-width: 28px;
+    }
+}
+
+
+/* 手机端左侧抽屉 */
+.mobile-drawer {
+    display: none;
+}
+
+.mobile-drawer.active {
+    display: block;
+}
+
+.mobile-drawer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 998;
+    animation: fadeIn 0.2s ease;
+}
+
+.mobile-drawer-content {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100%;
+    background: white;
+    z-index: 999;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+}
+
+.mobile-drawer.active .mobile-drawer-content {
+    transform: translateX(0);
+}
+
+.mobile-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.mobile-drawer-header .fa-list {
+    color: #4299e1;
+    margin-right: 8px;
+}
+
+.mobile-drawer-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #718096;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s;
+}
+
+.mobile-drawer-close:hover {
+    color: #2d3748;
+}
+
+.mobile-drawer-nav {
+    padding: 8px 0;
+}
+
+.mobile-drawer-nav .nav-item {
+    padding: 12px 20px;
+    border-radius: 0;
+    border-bottom: 1px solid #f7fafc;
+}
+
+/* 手机端汉堡菜单按钮 */
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 16px;
+    color: #4a5568;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mobile-menu-btn:hover {
+    background: #edf2f7;
+    color: #2d3748;
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 }
 
