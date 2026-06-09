@@ -429,7 +429,7 @@ async function loadNavigation() {
         groupNavElement.innerHTML = navHtml;
 
         // 同步手机端抽屉目录
-        const mobileDrawerNav = document.getElementById('mobileDrawerNav');
+        const mobileDrawerNav = document.getElementById("mobileDrawerNav");
         if (mobileDrawerNav) {
             mobileDrawerNav.innerHTML = navHtml;
         }
