@@ -773,3 +773,18 @@ async function loadIcons() {
         }
     }
 }
+
+// 返回顶部
+function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// 监听滚动显示/隐藏返回顶部按钮
+window.addEventListener("scroll", function() {
+    const btn = document.getElementById("backToTop");
+    if (window.scrollY > 300) {
+        btn.classList.add("show");
+    } else {
+        btn.classList.remove("show");
+    }
+});
