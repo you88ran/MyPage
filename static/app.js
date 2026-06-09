@@ -436,10 +436,17 @@ async function loadNavigation() {
         
         await loadIcons();
         
+        // 修复：先移除再添加，避免重复绑定scroll监听
+        window.removeEventListener('scroll', updateActiveNavItem);
         window.addEventListener('scroll', updateActiveNavItem);
     } catch (error) {
         navigationElement.innerHTML = `<div class="error" style="padding:40px;color:#e53e3e;text-align:center;">加载失败: ${error.message}</div>`;
         groupNavElement.innerHTML = `<div style="color:#e53e3e;font-size:13px;">加载失败</div>`;
+        // 修复：catch分支也要同步抽屉内容，避免打开抽屉时空白
+        const mobileDrawerNav = document.getElementById("mobileDrawerNav");
+        if (mobileDrawerNav) {
+            mobileDrawerNav.innerHTML = `<div style="padding:16px;color:#e53e3e;font-size:13px;">目录加载失败，请刷新重试</div>`;
+        }
     }
 }
 
@@ -452,12 +459,15 @@ function highlightNavItem(element) {
 
 function updateActiveNavItem() {
     const groups = document.querySelectorAll('.group');
-    const navItems = document.querySelectorAll('.nav-item');
     
-    groups.forEach((group, index) => {
+    groups.forEach((group) => {
         const rect = group.getBoundingClientRect();
         if (rect.top <= 100 && rect.bottom >= 100) {
-            if (navItems[index]) highlightNavItem(navItems[index]);
+            // 修复：用groupId精确匹配导航项，替代按DOM顺序index匹配（避免桌面/抽屉重复nav-item导致错位）
+            const groupId = group.id;
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.toggle('active', item.getAttribute('data-group-id') === groupId);
+            });
         }
     });
 }
