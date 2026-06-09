@@ -388,6 +388,7 @@ body {
     align-items: center;
     gap: 12px;
     flex-shrink: 0;
+    position: relative;
 }
 
 .github-link {
@@ -696,25 +697,27 @@ body {
 
     /* 手机端折叠目录显示 */
     .mobile-nav {
-        display: block;
+        display: inline-block;
         background: rgba(255,255,255,0.95);
         border-radius: 10px;
-        margin-bottom: 12px;
+        margin-bottom: 0;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         border: 1px solid rgba(226,232,240,0.8);
-        overflow: hidden;
+        position: relative;
     }
 
     .mobile-nav-title {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 12px 16px;
-        font-size: 15px;
+        padding: 8px 12px;
+        font-size: 13px;
         font-weight: 600;
         color: #2d3748;
         cursor: pointer;
         user-select: none;
+        gap: 6px;
+        white-space: nowrap;
     }
 
     .mobile-nav-title span {
@@ -736,6 +739,14 @@ body {
         overflow: hidden;
         transition: max-height 0.3s ease;
         border-top: 1px solid #e2e8f0;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        min-width: 200px;
+        background: white;
+        border-radius: 0 0 10px 10px;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        z-index: 200;
     }
 
     .mobile-nav-list .nav-item {
@@ -747,6 +758,9 @@ body {
     .mobile-nav-list .nav-item:last-child { border-bottom: none; }
 
     .header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
         flex-wrap: wrap;
         gap: 10px;
         padding: 12px;
@@ -756,7 +770,7 @@ body {
     .search-form { width: 100%; order: 1; }
     .search-bar { width: 100%; }
 
-    .header-actions { order: 2; width: 100%; justify-content: flex-end; }
+    .header-actions { order: 2; width: auto; justify-content: flex-end; display: flex; align-items: center; gap: 8px; }
 
     .links {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -786,5 +800,50 @@ body {
 
     .link-icon {
         width: 28px; height: 28px; min-width: 28px;
+    }
+}
+
+/* 返回顶部按钮 */
+.back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 12px rgba(66,153,225,0.3);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    z-index: 999;
+}
+
+.back-to-top.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.back-to-top:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(66,153,225,0.4);
+}
+
+@media (max-width: 768px) {
+    .back-to-top {
+        bottom: 20px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
     }
 }
