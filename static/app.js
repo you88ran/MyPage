@@ -427,6 +427,12 @@ async function loadNavigation() {
         
         navigationElement.innerHTML = html;
         groupNavElement.innerHTML = navHtml;
+
+        // 同步手机端目录
+        const mobileNavList = document.getElementById('mobileNavList');
+        if (mobileNavList) {
+            mobileNavList.innerHTML = navHtml;
+        }
         
         await loadIcons();
         
