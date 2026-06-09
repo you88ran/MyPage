@@ -43,12 +43,30 @@ body {
     margin-bottom: 12px;
     padding-bottom: 8px;
     border-bottom: 2px solid #e2e8f0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    transition: color 0.2s;
+}
+
+.nav-title:hover {
+    color: #4299e1;
+}
+
+.nav-toggle-icon {
+    font-size: 12px;
+    color: #a0aec0;
+    transition: transform 0.3s ease;
 }
 
 .nav-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
 .nav-item {
@@ -59,6 +77,9 @@ body {
     cursor: pointer;
     transition: all 0.2s ease;
     text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .nav-item:hover {
@@ -72,12 +93,68 @@ body {
     font-weight: 500;
 }
 
+/* 手机端折叠目录 */
+.mobile-nav {
+    display: none;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    overflow: hidden;
+}
+
+.mobile-nav-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #2d3748;
+    cursor: pointer;
+    user-select: none;
+}
+
+.mobile-nav-title span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mobile-nav-title i.fa-list {
+    color: #4299e1;
+}
+
+.mobile-nav-icon {
+    font-size: 12px;
+    color: #a0aec0;
+    transition: transform 0.3s ease;
+}
+
+.mobile-nav-list {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    border-top: 1px solid #e2e8f0;
+}
+
+.mobile-nav-list .nav-item {
+    border-radius: 0;
+    padding: 10px 16px;
+    border-bottom: 1px solid #f7fafc;
+}
+
+.mobile-nav-list .nav-item:last-child {
+    border-bottom: none;
+}
+
 /* 头部样式 */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     background: white;
     padding: 15px 20px;
     border-radius: 10px;
@@ -136,17 +213,15 @@ body {
 }
 
 .search-bar select {
-    width: 100px;
-    padding: 10px;
-    font-size: 16px;
+    width: 80px;
+    padding: 10px 6px;
+    font-size: 14px;
     border: 1px solid #ddd;
     border-radius: 0 4px 4px 0;
     background-color: #f8f9fa;
     cursor: pointer;
     transition: all 0.3s ease;
-    position: relative;
     appearance: none;
-    padding-right: 25px;
 }
 
 .search-bar::after {
@@ -201,12 +276,6 @@ body {
     color: #2d3748;
 }
 
-.group-privacy-icon {
-    font-size: 14px;
-    color: #718096;
-    margin-left: 4px;
-}
-
 .group-title::after {
     content: '';
     position: absolute;
@@ -219,14 +288,16 @@ body {
 }
 
 .group-privacy-icon {
+    font-size: 14px;
     color: #718096;
-    font-size: 16px;
+    margin-left: 4px;
 }
 
 .group-actions {
     display: flex;
     gap: 8px;
     align-items: center;
+    margin-left: auto;
 }
 
 .group-actions .order-actions {
@@ -234,23 +305,36 @@ body {
     gap: 2px;
 }
 
-.group-actions .order-actions button {
+.group-actions button {
     padding: 4px 8px;
     font-size: 12px;
-    width: 24px;
+    background: #edf2f7;
+    color: #4a5568;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.links-grid {
+.group-actions button:hover {
+    background: #e2e8f0;
+    color: #2d3748;
+    transform: translateY(-1px);
+}
+
+/* 链接网格 */
+.links {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 15px;
+    margin-top: 10px;
 }
 
 .link-card {
     position: relative;
-    display: block;
+    display: flex;
+    align-items: center;
     padding: 15px;
-    margin-bottom: 15px;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 10px;
     text-decoration: none;
@@ -258,42 +342,10 @@ body {
     border: 1px solid rgba(226, 232, 240, 0.8);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     backdrop-filter: blur(8px);
-    min-height: 80px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    overflow: hidden;
-}
-
-.link-info {
-    display: flex;
-    align-items: flex-start;
+    height: 80px;
     gap: 12px;
-    width: 100%;
-    min-width: 0;
-}
-
-.link-title {
-    font-size: 16px;
-    color: #2d3748;
-    text-decoration: none;
-    font-weight: 500;
-    white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-    margin-bottom: 4px;
-}
-
-.link-description {
-    font-size: 13px;
-    color: #718096;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    word-break: break-word;
-    line-height: 1.4;
+    cursor: pointer;
 }
 
 .link-card:hover {
@@ -302,21 +354,24 @@ body {
     border-color: rgba(66, 153, 225, 0.3);
 }
 
-.link-card-content {
-    flex: 1;
+.link-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
 }
 
 .link-icon {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
     border-radius: 6px;
     overflow: hidden;
     background: #f7fafc;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
 }
 
 .link-icon img {
@@ -329,6 +384,27 @@ body {
     flex: 1;
     min-width: 0;
     overflow: hidden;
+}
+
+.link-title {
+    font-size: 14px;
+    color: #2d3748;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.link-description {
+    font-size: 12px;
+    color: #718096;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
 }
 
 /* 链接悬浮提示 */
@@ -357,15 +433,15 @@ body {
 /* 链接操作按钮 */
 .link-actions {
     position: absolute;
-    right: 15px;
+    right: 10px;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
-    gap: 8px;
+    flex-direction: column;
+    gap: 4px;
     opacity: 0;
     transition: opacity 0.3s ease;
-    margin-left: 10px;
-    flex-shrink: 0;
+    z-index: 1;
 }
 
 .link-card:hover .link-actions {
@@ -373,30 +449,31 @@ body {
 }
 
 .link-actions button {
-    padding: 4px 8px;
-    font-size: 12px;
+    padding: 3px 7px;
+    font-size: 11px;
     background: #edf2f7;
     color: #4a5568;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .link-actions button:hover {
-    background: #e2e8f0;
-    color: #2d3748;
+    background: #4299e1;
+    color: white;
     transform: translateY(-1px);
 }
 
 .order-actions {
     display: flex;
-    gap: 4px;
+    gap: 2px;
 }
 
 .order-actions button {
     padding: 2px 6px;
-    font-size: 12px;
+    font-size: 11px;
 }
 
 /* 模态框样式 */
@@ -422,8 +499,6 @@ body {
     border-radius: 12px;
     position: relative;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    transform: translateY(0);
-    transition: transform 0.3s ease;
 }
 
 .modal-content h2 {
@@ -466,12 +541,6 @@ body {
 .close:hover {
     background: #3182ce;
     transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.close:active {
-    transform: scale(0.95);
-    background: #2c5282;
 }
 
 .close::before {
@@ -480,10 +549,6 @@ body {
     line-height: 1;
     font-family: Arial, sans-serif;
     margin-top: -2px;
-}
-
-.close span {
-    display: none;
 }
 
 .modal input,
@@ -509,7 +574,7 @@ body {
 }
 
 .modal textarea {
-    min-height: 120px;
+    min-height: 100px;
     resize: vertical;
 }
 
@@ -547,16 +612,11 @@ body {
 }
 
 @keyframes modalFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
+/* 加载动画 */
 .loading {
     text-align: center;
     padding: 40px;
@@ -588,27 +648,16 @@ body {
 }
 
 @keyframes loading-wave {
-    0% {
-        top: 36px;
-        left: 36px;
-        width: 0;
-        height: 0;
-        opacity: 1;
-    }
-    100% {
-        top: 0;
-        left: 0;
-        width: 72px;
-        height: 72px;
-        opacity: 0;
-    }
+    0% { top: 36px; left: 36px; width: 0; height: 0; opacity: 1; }
+    100% { top: 0; left: 0; width: 72px; height: 72px; opacity: 0; }
 }
 
 /* 管理员控制按钮 */
 .admin-controls {
-    margin-bottom: 25px;
+    margin-bottom: 20px;
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
 .admin-controls button {
@@ -631,463 +680,6 @@ body {
     box-shadow: 0 4px 6px rgba(66, 153, 225, 0.2);
 }
 
-.admin-controls button i {
-    font-size: 14px;
-}
-
-.group-title button {
-    padding: 4px 8px;
-    font-size: 12px;
-    background-color: #4299e1;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.group-title button:hover {
-    background-color: #3182ce;
-    transform: translateY(-1px);
-}
-
-/* 表单样式 */
-.modal textarea {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    min-height: 100px;
-}
-
-.modal select {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.modal label {
-    display: block;
-    margin-bottom: 10px;
-}
-
-.link-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    margin-left: 10px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.link-card:hover .link-actions {
-    opacity: 1;
-}
-
-.link-actions button {
-    padding: 4px 8px;
-    font-size: 12px;
-    background-color: #4299e1;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.link-actions button:hover {
-    background-color: #3182ce;
-    transform: translateY(-1px);
-}
-
-.order-actions {
-    display: flex;
-    gap: 2px;
-}
-
-.order-actions button {
-    padding: 2px 6px;
-    font-size: 12px;
-}
-
-.admin-button i {
-    font-size: 14px;
-}
-
-/* 新增动画效果 */
-@keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-@keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-5px); }
-    100% { transform: translateY(0px); }
-}
-
-.link-card {
-    animation: float 6s ease-in-out infinite;
-}
-
-.group {
-    position: relative;
-    margin-bottom: 30px;
-}
-
-.group::before {
-    content: '';
-    position: absolute;
-    top: -5px;
-    left: -5px;
-    right: -5px;
-    bottom: -5px;
-    background: linear-gradient(135deg, rgba(66, 153, 225, 0.1) 0%, rgba(99, 179, 237, 0.05) 100%);
-    border-radius: 12px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    z-index: -1;
-}
-
-.group:hover::before {
-    opacity: 1;
-}
-
-/* 响应式优化 */
-@media (max-width: 768px) {
-    .container {
-        grid-template-columns: 1fr;
-    }
-
-    .nav-sidebar {
-        display: none;
-    }
-
-    .header {
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .search-bar {
-        width: 100%;
-    }
-
-    .link-card {
-        flex-direction: column;
-    }
-
-    .link-actions {
-        margin-top: 10px;
-        margin-left: 0;
-        flex-direction: row;
-        opacity: 1;
-    }
-}
-
-/* 分组操作按钮样式 */
-.group-actions {
-    display: flex;
-    gap: 8px;
-    margin-left: auto;
-}
-
-.group-title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.group-actions button {
-    padding: 4px 8px;
-    font-size: 12px;
-    background: #edf2f7;
-    color: #4a5568;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.group-actions button:hover {
-    background: #e2e8f0;
-    color: #2d3748;
-    transform: translateY(-1px);
-}
-
-.order-actions {
-    display: flex;
-    gap: 4px;
-}
-
-/* 链接卡片样式优化 */
-.link-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 15px;
-    margin-bottom: 10px;
-    background: white;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    overflow: hidden;
-}
-
-.link-info {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    width: 100%;
-    min-width: 0;
-}
-
-.link-title {
-    font-size: 16px;
-    color: #2d3748;
-    text-decoration: none;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-    margin-bottom: 4px;
-}
-
-.link-description {
-    font-size: 13px;
-    color: #718096;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    word-break: break-word;
-    line-height: 1.4;
-}
-
-.link-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    border-color: rgba(66, 153, 225, 0.3);
-}
-
-.link-card-content {
-    flex: 1;
-}
-
-.link-icon {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    border-radius: 6px;
-    overflow: hidden;
-    background: #f7fafc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-}
-
-.link-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.link-text {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-}
-
-/* 链接悬浮提示 */
-.link-url-tooltip {
-    position: absolute;
-    bottom: -30px;
-    left: 0;
-    right: 0;
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 6px 12px;
-    font-size: 12px;
-    transition: all 0.3s ease;
-    opacity: 0;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.link-card:hover .link-url-tooltip {
-    bottom: 0;
-    opacity: 1;
-}
-
-/* 链接操作按钮 */
-.link-actions {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    gap: 8px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    margin-left: 10px;
-    flex-shrink: 0;
-}
-
-.link-card:hover .link-actions {
-    opacity: 1;
-}
-
-.link-actions button {
-    padding: 4px 8px;
-    font-size: 12px;
-    background: #edf2f7;
-    color: #4a5568;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.link-actions button:hover {
-    background: #e2e8f0;
-    color: #2d3748;
-    transform: translateY(-1px);
-}
-
-.order-actions {
-    display: flex;
-    gap: 4px;
-}
-
-.order-actions button {
-    padding: 2px 6px;
-    font-size: 12px;
-}
-
-.admin-button i {
-    font-size: 14px;
-}
-
-/* 新增动画效果 */
-@keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-@keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-5px); }
-    100% { transform: translateY(0px); }
-}
-
-.link-card {
-    animation: float 6s ease-in-out infinite;
-}
-
-.group {
-    position: relative;
-    margin-bottom: 30px;
-}
-
-.group::before {
-    content: '';
-    position: absolute;
-    top: -5px;
-    left: -5px;
-    right: -5px;
-    bottom: -5px;
-    background: linear-gradient(135deg, rgba(66, 153, 225, 0.1) 0%, rgba(99, 179, 237, 0.05) 100%);
-    border-radius: 12px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    z-index: -1;
-}
-
-.group:hover::before {
-    opacity: 1;
-}
-
-/* 响应式优化 */
-@media (max-width: 768px) {
-    .container {
-        grid-template-columns: 1fr;
-    }
-
-    .nav-sidebar {
-        display: none;
-    }
-
-    .header {
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .search-bar {
-        width: 100%;
-    }
-
-    .link-card {
-        flex-direction: column;
-    }
-
-    .link-actions {
-        margin-top: 10px;
-        margin-left: 0;
-        flex-direction: row;
-        opacity: 1;
-    }
-}
-
-/* 分组操作按钮样式 */
-.group-actions {
-    display: flex;
-    gap: 8px;
-    margin-left: auto;
-}
-
-.group-title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.group-actions button {
-    padding: 4px 8px;
-    font-size: 12px;
-    background: #edf2f7;
-    color: #4a5568;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.group-actions button:hover {
-    background: #e2e8f0;
-    color: #2d3748;
-    transform: translateY(-1px);
-}
-
-.order-actions {
-    display: flex;
-    gap: 4px;
-}
-
-/* 链接网格布局 */
-.links {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
-    margin-top: 15px;
-}
-
 /* 导航加载动画 */
 .nav-loading {
     display: flex;
@@ -1105,29 +697,20 @@ body {
     animation: navLoadingBounce 0.5s ease-in-out infinite;
 }
 
-.nav-loading-dot:nth-child(2) {
-    animation-delay: 0.1s;
-}
-
-.nav-loading-dot:nth-child(3) {
-    animation-delay: 0.2s;
-}
+.nav-loading-dot:nth-child(2) { animation-delay: 0.1s; }
+.nav-loading-dot:nth-child(3) { animation-delay: 0.2s; }
 
 @keyframes navLoadingBounce {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-6px);
-        background: #63b3ed;
-    }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); background: #63b3ed; }
 }
 
-/* GitHub 链接样式 */
+/* GitHub 链接 */
 .header-actions {
     display: flex;
     align-items: center;
     gap: 15px;
+    flex-shrink: 0;
 }
 
 .github-link {
@@ -1147,83 +730,7 @@ body {
     color: #2d3748;
     transform: translateY(-2px);
     background: #edf2f7;
-} 
-
-.link-card {
-    position: relative;
-    display: block;
-    padding: 15px;
-    margin-bottom: 15px;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 10px;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    backdrop-filter: blur(8px);
-    height: 90px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    overflow: hidden;
-    cursor: pointer;
 }
-
-.link-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    min-width: 0;
-}
-
-.link-title {
-    font-size: 16px;
-    color: #2d3748;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-    margin-bottom: 4px;
-}
-
-.link-icon {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    border-radius: 6px;
-    overflow: hidden;
-    background: #f7fafc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    align-self: center;
-}
-
-.link-actions {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    gap: 8px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    margin-left: 10px;
-    flex-shrink: 0;
-    z-index: 1;
-}
-
-.link-actions button {
-    position: relative;
-    z-index: 2;
-}
-
-.link-actions button:hover {
-    z-index: 3;
-} 
 
 /* 管理员按钮 */
 #adminButton {
@@ -1244,40 +751,194 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size: 14px;
+    white-space: nowrap;
 }
 
-/* 不同按钮的颜色 */
-.admin-button[onclick*="handleLogout"] {
-    background: #e53e3e;
-}
-
-.admin-button[onclick*="handleLogout"]:hover {
-    background: #c53030;
-}
-
-.admin-button[onclick*="exitEditMode"] {
-    background: #718096;
-}
-
-.admin-button[onclick*="exitEditMode"]:hover {
-    background: #4a5568;
-}
-
-.admin-button[onclick*="enterEditMode"],
-.admin-button[onclick*="openAdminModal"] {
-    background: #4299e1;
-}
-
-.admin-button[onclick*="enterEditMode"]:hover,
-.admin-button[onclick*="openAdminModal"]:hover {
-    background: #3182ce;
-}
+.admin-button[onclick*="handleLogout"] { background: #e53e3e; }
+.admin-button[onclick*="handleLogout"]:hover { background: #c53030; }
+.admin-button[onclick*="exitEditMode"] { background: #718096; }
+.admin-button[onclick*="exitEditMode"]:hover { background: #4a5568; }
 
 .admin-button:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 6px -1px rgba(66, 153, 225, 0.3);
 }
 
-.admin-button i {
+.admin-button i { font-size: 14px; }
+
+/* 分组悬浮效果 */
+.group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.group::before {
+    content: '';
+    position: absolute;
+    top: -5px; left: -5px; right: -5px; bottom: -5px;
+    background: linear-gradient(135deg, rgba(66, 153, 225, 0.06) 0%, rgba(99, 179, 237, 0.03) 100%);
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+
+.group:hover::before { opacity: 1; }
+
+/* 确认对话框 */
+.confirm-dialog {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirm-dialog[style*="block"] {
+    display: flex !important;
+}
+
+.confirm-content {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 380px;
+    width: 90%;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.confirm-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 10px;
+}
+
+.confirm-message {
     font-size: 14px;
-} 
+    color: #718096;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.confirm-button {
+    padding: 8px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.confirm-cancel {
+    background: #edf2f7;
+    color: #4a5568;
+}
+
+.confirm-cancel:hover { background: #e2e8f0; }
+
+.confirm-ok {
+    background: #e53e3e;
+    color: white;
+}
+
+.confirm-ok:hover { background: #c53030; }
+
+/* ===== 响应式 ===== */
+@media (max-width: 768px) {
+    .container {
+        grid-template-columns: 1fr;
+        gap: 0;
+        padding: 12px;
+    }
+
+    /* 桌面端侧边栏在手机上隐藏 */
+    .nav-sidebar {
+        display: none;
+    }
+
+    /* 手机端折叠目录显示 */
+    .mobile-nav {
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    .header {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+
+    .search-form {
+        width: 100%;
+    }
+
+    .search-bar {
+        width: 100%;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .links {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 10px;
+    }
+
+    .link-card {
+        height: 70px;
+        padding: 10px;
+    }
+
+    .link-actions {
+        opacity: 1;
+        position: static;
+        transform: none;
+        flex-direction: row;
+        margin-top: 8px;
+        background: rgba(237, 242, 247, 0.9);
+        border-radius: 4px;
+        padding: 4px;
+    }
+
+    .admin-button {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .group {
+        padding: 15px;
+        margin-bottom: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .links {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .link-title {
+        font-size: 13px;
+    }
+
+    .link-icon {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+    }
+}
