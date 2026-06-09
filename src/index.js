@@ -20,43 +20,29 @@ function base64Decode(str) {
 
 // 生成 JWT token
 async function generateToken(env) {
-  // 简单的 payload
   const payload = {
-    exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // 24小时过期
-    iat: Math.floor(Date.now() / 1000), // 签发时间
+    exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60,
+    iat: Math.floor(Date.now() / 1000),
     admin: true
   };
 
-  // 编码 payload
   const encodedPayload = base64Encode(JSON.stringify(payload));
-  
-  // 使用密钥签名
   const signature = base64Encode(env.JWT_SECRET + encodedPayload);
-  
-  // 返回 token
   return `${encodedPayload}.${signature}`;
 }
 
 // 验证 JWT token
 async function verifyToken(token, env) {
   try {
-    // 分割 payload 和签名
     const [encodedPayload, signature] = token.split('.');
-
-    // 验证签名是否匹配
     const expectedSignature = base64Encode(env.JWT_SECRET + encodedPayload);
     if (signature !== expectedSignature) {
       return false;
     }
-
-    // 解码 payload
     const payload = JSON.parse(base64Decode(encodedPayload));
-
-    // 检查是否过期
     if (payload.exp < Math.floor(Date.now() / 1000)) {
       return false;
     }
-
     return payload.admin === true;
   } catch (error) {
     return false;
@@ -192,11 +178,9 @@ async function handleGroups(request, env) {
 
     // DELETE /api/groups/:id - 删除分组
     if (request.method === 'DELETE') {
-      // 开始一个事务
       await env.DB.prepare('BEGIN').run();
       
       try {
-        // 获取要删除的分组的 order_num
         const group = await env.DB.prepare('SELECT order_num FROM Groups WHERE id = ?')
           .bind(id)
           .first();
@@ -205,17 +189,14 @@ async function handleGroups(request, env) {
           throw new Error('分组不存在');
         }
 
-        // 删除分组内的所有链接
         await env.DB.prepare('DELETE FROM Links WHERE group_id = ?')
           .bind(id)
           .run();
 
-        // 删除分组
         await env.DB.prepare('DELETE FROM Groups WHERE id = ?')
           .bind(id)
           .run();
 
-        // 更新其他分组的序号
         await env.DB.prepare(`
           UPDATE Groups 
           SET order_num = order_num - 1 
@@ -223,12 +204,10 @@ async function handleGroups(request, env) {
         `).bind(group.order_num)
           .run();
 
-        // 提交事务
         await env.DB.prepare('COMMIT').run();
 
         return new Response(JSON.stringify({ success: true }), { headers });
       } catch (error) {
-        // 如果出错，回滚事务
         await env.DB.prepare('ROLLBACK').run();
         throw error;
       }
@@ -244,10 +223,10 @@ async function handleGroups(request, env) {
 }
 
 async function handleLinks(request, env) {
-  const url = new URL(request.url);
-  const path = url.pathname;
+  const reqUrl = new URL(request.url);  // 修复：重命名为 reqUrl 避免与链接 url 字段冲突
+  const path = reqUrl.pathname;
   const id = path.match(/\/api\/links\/(\d+)/)?.[1];
-  const groupId = url.searchParams.get('group_id');
+  const groupId = reqUrl.searchParams.get('group_id');
   const isAdmin = await verifyAdmin(request, env);
 
   const headers = {
@@ -299,9 +278,9 @@ async function handleLinks(request, env) {
 
     // POST /api/links - 创建新链接
     if (request.method === 'POST' && path === '/api/links') {
-      const { name, url, logo, description, group_id, order_num } = await request.json();
+      // 修复：解构时将 url 重命名为 linkUrl，避免与 reqUrl 变量名语义混淆
+      const { name, url: linkUrl, logo, description, group_id, order_num } = await request.json();
       
-      // 获取当前分组中的最大 order_num
       let currentMaxOrder = 0;
       if (group_id) {
         const result = await env.DB.prepare(`
@@ -317,17 +296,17 @@ async function handleLinks(request, env) {
         VALUES (?, ?, ?, ?, ?, ?)
       `).bind(
         name,
-        url,
+        linkUrl,          // 修复：使用 linkUrl
         logo || null,
         description || null,
         group_id || null,
-        order_num || (currentMaxOrder + 10)
+        order_num !== undefined ? order_num : (currentMaxOrder + 10)
       ).run();
 
       return new Response(JSON.stringify({
         id: result.lastRowId,
         name,
-        url,
+        url: linkUrl,     // 修复：使用 linkUrl
         logo,
         description,
         group_id,
@@ -342,7 +321,8 @@ async function handleLinks(request, env) {
 
     // PUT /api/links/:id - 更新链接
     if (request.method === 'PUT') {
-      const { name, url, logo, description, group_id, order_num } = await request.json();
+      // 修复：解构时将 url 重命名为 linkUrl
+      const { name, url: linkUrl, logo, description, group_id, order_num } = await request.json();
       
       await env.DB.prepare(`
         UPDATE Links 
@@ -352,7 +332,7 @@ async function handleLinks(request, env) {
         WHERE id = ?
       `).bind(
         name,
-        url,
+        linkUrl,          // 修复：使用 linkUrl
         logo || null,
         description || null,
         group_id || null,
@@ -363,7 +343,7 @@ async function handleLinks(request, env) {
       return new Response(JSON.stringify({
         id: parseInt(id),
         name,
-        url,
+        url: linkUrl,     // 修复：使用 linkUrl
         logo,
         description,
         group_id,
@@ -396,7 +376,6 @@ async function fetchWebsiteInfo(url) {
     const response = await fetch(url);
     const html = await response.text();
     
-    // 使用简单的正则表达式提取信息
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
     const descriptionMatch = html.match(/<meta[^>]*name="description"[^>]*content="([^"]*)"[^>]*>/i) 
       || html.match(/<meta[^>]*content="([^"]*)"[^>]*name="description"[^>]*>/i);
@@ -479,4 +458,4 @@ export default {
       });
     }
   },
-}; 
+};
