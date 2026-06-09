@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>导航页</title>
+    <title>悠游导航</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
@@ -27,8 +27,11 @@
 
     <div class="container">
         <!-- 目录导航 -->
-        <div class="nav-sidebar">
-            <div class="nav-title">目录导航</div>
+        <div class="nav-sidebar" id="navSidebar">
+            <div class="nav-title" id="navToggle" onclick="toggleNav()">
+                悠游导航
+                <i class="fas fa-chevron-up nav-toggle-icon" id="navToggleIcon"></i>
+            </div>
             <div id="groupNav" class="nav-list"></div>
         </div>
 
@@ -44,9 +47,9 @@
                             </div>
                             <input type="text" id="searchInput" placeholder="搜索...">
                             <select id="searchEngine">
-                                <option value="baidu"><i class="fab fa-baidu"></i> 百度</option>
-                                <option value="google"><i class="fab fa-google"></i> Google</option>
-                                <option value="bing"><i class="fab fa-microsoft"></i> Bing</option>
+                                <option value="baidu">百度</option>
+                                <option value="google">Google</option>
+                                <option value="bing">Bing</option>
                             </select>
                         </div>
                     </form>
@@ -65,6 +68,15 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- 手机端折叠目录 -->
+            <div class="mobile-nav" id="mobileNav">
+                <div class="mobile-nav-title" onclick="toggleMobileNav()">
+                    <span><i class="fas fa-list"></i> 悠游导航</span>
+                    <i class="fas fa-chevron-down mobile-nav-icon" id="mobileNavIcon"></i>
+                </div>
+                <div class="mobile-nav-list" id="mobileNavList"></div>
             </div>
 
             <!-- 导航内容 -->
@@ -128,5 +140,40 @@
 
     <script src="api.js"></script>
     <script src="app.js"></script>
+    <script>
+        // 桌面端侧边栏折叠
+        let navCollapsed = false;
+        function toggleNav() {
+            navCollapsed = !navCollapsed;
+            const list = document.getElementById('groupNav');
+            const icon = document.getElementById('navToggleIcon');
+            if (navCollapsed) {
+                list.style.display = 'none';
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            } else {
+                list.style.display = 'flex';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            }
+        }
+
+        // 手机端目录折叠
+        let mobileNavOpen = false;
+        function toggleMobileNav() {
+            mobileNavOpen = !mobileNavOpen;
+            const list = document.getElementById('mobileNavList');
+            const icon = document.getElementById('mobileNavIcon');
+            if (mobileNavOpen) {
+                list.style.maxHeight = list.scrollHeight + 'px';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                list.style.maxHeight = '0';
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+    </script>
 </body>
-</html> 
+</html>
