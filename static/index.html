@@ -66,11 +66,17 @@
                                 管理员登录
                             </button>
                         </div>
-                        <button id="mobileMenuBtn" class="mobile-menu-btn" title="目录">
-                            <i class="fas fa-bars"></i>
-                        </button>
                     </div>
                 </div>
+            </div>
+
+            <!-- 手机端折叠目录 -->
+            <div class="mobile-nav" id="mobileNav">
+                <div class="mobile-nav-title" onclick="toggleMobileNav()">
+                    <span><i class="fas fa-list"></i> 悠游导航</span>
+                    <i class="fas fa-chevron-down mobile-nav-icon" id="mobileNavIcon"></i>
+                </div>
+                <div class="mobile-nav-list" id="mobileNavList"></div>
             </div>
 
             <!-- 导航内容 -->
@@ -132,26 +138,54 @@
         </div>
     </div>
 
-    <!-- 手机端左侧抽屉目录 -->
-    <div id="mobileDrawer" class="mobile-drawer">
-        <div class="mobile-drawer-overlay" id="mobileDrawerOverlay"></div>
-        <div class="mobile-drawer-content">
-            <div class="mobile-drawer-header">
-                <span><i class="fas fa-list"></i> 目录</span>
-                <button class="mobile-drawer-close" id="mobileDrawerClose"><i class="fas fa-times"></i></button>
+    <!-- 回到顶部按钮 -->
+    <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+
+    <!-- 手机端固定顶栏 -->
+    <div class="mobile-fixed-header" id="mobileFixedHeader" style="display:none;">
+        <form class="search-form" onsubmit="handleSearch(event)">
+            <div class="search-bar">
+                <div class="search-icon"><i class="fas fa-search"></i></div>
+                <input type="text" id="searchInputMobile" placeholder="搜索...">
+                <select id="searchEngineMobile">
+                    <option value="baidu">百度</option>
+                    <option value="google">Google</option>
+                    <option value="bing">Bing</option>
+                </select>
             </div>
-            <div class="mobile-drawer-nav" id="mobileDrawerNav"></div>
+        </form>
+        <div class="mobile-header-row2">
+            <button class="mobile-nav-btn" id="mobileNavBtn" onclick="toggleMobileDropdown()">
+                <i class="fas fa-list"></i> 悠游导航 <i class="fas fa-chevron-down" id="mobileDropdownIcon"></i>
+            </button>
+            <div class="header-actions">
+                <a href="https://github.com/yvyan/MyPage" target="_blank" class="github-link" title="查看源码">
+                    <i class="fab fa-github"></i>
+                </a>
+                <div id="adminButtonMobile"></div>
+            </div>
         </div>
     </div>
 
+    <!-- 手机端目录下拉面板 -->
+    <div class="mobile-nav-dropdown" id="mobileNavDropdown"></div>
+
     <script src="api.js"></script>
     <script src="app.js"></script>
-    <!-- 返回顶部按钮 -->
-    <button id="backToTop" class="back-to-top" onclick="scrollToTop()" title="返回顶部">
-        <i class="fas fa-arrow-up"></i>
-    </button>
     <script>
-        // 桌面端侧边栏折叠
+        // ===== 回到顶部 =====
+        const backToTop = document.getElementById('backToTop');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        // ===== 桌面端侧边栏折叠 =====
         let navCollapsed = false;
         function toggleNav() {
             navCollapsed = !navCollapsed;
@@ -159,14 +193,90 @@
             const icon = document.getElementById('navToggleIcon');
             if (navCollapsed) {
                 list.style.display = 'none';
-                icon.classList.remove('fa-chevron-up');
-                icon.classList.add('fa-chevron-down');
+                icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
             } else {
                 list.style.display = 'flex';
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-up');
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
             }
         }
+
+        // ===== 手机端固定顶栏 =====
+        const mobileFixedHeader = document.getElementById('mobileFixedHeader');
+        const isMobile = () => window.innerWidth <= 768;
+
+        function initMobileHeader() {
+            if (isMobile()) {
+                mobileFixedHeader.style.display = 'block';
+                // 同步搜索引擎选择
+                const engine = localStorage.getItem('preferred_search_engine') || 'bing';
+                document.getElementById('searchEngineMobile').value = engine;
+                // 撑开内容区，避免被固定顶栏遮挡
+                const h = mobileFixedHeader.offsetHeight;
+                document.querySelector('.container').style.paddingTop = (h + 10) + 'px';
+                // 目录下拉面板 top
+                document.getElementById('mobileNavDropdown').style.top = h + 'px';
+                // 同步管理员按钮
+                syncMobileAdminButton();
+            } else {
+                mobileFixedHeader.style.display = 'none';
+                document.querySelector('.container').style.paddingTop = '';
+            }
+        }
+
+        // 手机端搜索表单提交（复用桌面端 handleSearch，但读取手机端输入框）
+        document.querySelector('.mobile-fixed-header .search-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const SEARCH_ENGINES = {
+                baidu: 'https://www.baidu.com/s?wd=',
+                google: 'https://www.google.com/search?q=',
+                bing: 'https://www.bing.com/search?q='
+            };
+            const q = document.getElementById('searchInputMobile').value.trim();
+            const eng = document.getElementById('searchEngineMobile').value;
+            if (q) window.open(SEARCH_ENGINES[eng] + encodeURIComponent(q), '_blank');
+            localStorage.setItem('preferred_search_engine', eng);
+        });
+
+        // 手机端目录下拉
+        let mobileDropdownOpen = false;
+        function toggleMobileDropdown() {
+            mobileDropdownOpen = !mobileDropdownOpen;
+            const dropdown = document.getElementById('mobileNavDropdown');
+            const btn = document.getElementById('mobileNavBtn');
+            const icon = document.getElementById('mobileDropdownIcon');
+            if (mobileDropdownOpen) {
+                dropdown.classList.add('open');
+                btn.classList.add('active');
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            } else {
+                dropdown.classList.remove('open');
+                btn.classList.remove('active');
+                icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+            }
+        }
+
+        // 点击下拉项后自动关闭
+        document.getElementById('mobileNavDropdown').addEventListener('click', function(e) {
+            if (e.target.closest('.nav-item')) {
+                toggleMobileDropdown();
+            }
+        });
+
+        // 同步手机端管理员按钮（由 app.js 的 updateAdminButton 调用后触发）
+        function syncMobileAdminButton() {
+            const src = document.getElementById('adminButton');
+            const dst = document.getElementById('adminButtonMobile');
+            if (src && dst) dst.innerHTML = src.innerHTML;
+        }
+
+        // 监听窗口大小变化
+        window.addEventListener('resize', initMobileHeader);
+        // 初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            initMobileHeader();
+        });
+        // app.js 加载导航后同步手机端目录
+        const _origUpdateAdminButton = window.updateAdminButton;
     </script>
 </body>
 </html>
