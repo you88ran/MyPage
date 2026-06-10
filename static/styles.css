@@ -15,25 +15,52 @@ body {
 
 .container {
     display: grid;
-    grid-template-columns: 200px 1fr;
-    gap: 24px;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 20px;
+    grid-template-columns: 200px 4px 1fr;
+    gap: 0;
+    width: 100%;
+    min-height: 100vh;
+    padding: 0;
     animation: fadeIn 0.5s ease;
 }
 
 /* 侧边导航 */
 .nav-sidebar {
     position: sticky;
-    top: 20px;
-    height: fit-content;
-    background: rgba(255, 255, 255, 0.95);
+    top: 0;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.97);
     backdrop-filter: blur(8px);
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(226, 232, 240, 0.8);
+    padding: 16px 12px;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.06);
+    border-right: 1px solid #e8eef5;
+    overflow-y: auto;
+    overflow-x: hidden;
+    user-select: none;
+}
+
+/* 拖拽分隔线 */
+.sidebar-resizer {
+    width: 4px;
+    cursor: col-resize;
+    background: transparent;
+    position: relative;
+    transition: background 0.2s;
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.sidebar-resizer:hover,
+.sidebar-resizer.dragging {
+    background: #4299e1;
+}
+
+.sidebar-resizer::after {
+    content: '';
+    position: absolute;
+    left: -4px;
+    right: -4px;
+    top: 0;
+    bottom: 0;
 }
 
 .nav-title {
@@ -88,7 +115,9 @@ body {
 
 /* 主内容区 */
 .main-content {
-    min-width: 0; /* 防止grid子元素溢出 */
+    min-width: 0;
+    padding: 20px;
+    overflow: hidden;
 }
 
 /* 头部 */
@@ -239,11 +268,12 @@ body {
 
 .order-actions { display: flex; gap: 2px; }
 
-/* 链接网格 — 关键：铺满宽度 */
+/* 链接网格 — 铺满宽度 */
 .links {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
     gap: 12px;
+    width: 100%;
 }
 
 /* 链接卡片 */
@@ -674,25 +704,21 @@ body {
 
 /* ===== 响应式 ===== */
 @media (max-width: 900px) {
-    .container {
-        grid-template-columns: 160px 1fr;
-        gap: 16px;
-    }
-
     .links {
-        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     }
 }
 
 @media (max-width: 768px) {
     .container {
-        grid-template-columns: 1fr;
-        padding: 10px;
+        grid-template-columns: 1fr !important;
+        padding: 0;
         gap: 0;
     }
 
     /* 桌面侧边栏隐藏 */
     .nav-sidebar { display: none; }
+    .sidebar-resizer { display: none; }
 
     /* 手机端折叠目录显示 */
     .mobile-nav {
