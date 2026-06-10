@@ -108,8 +108,16 @@ body {
 .nav-item:hover { background: #edf2f7; color: #2d3748; }
 .nav-item.active { background: #e6f0fb; color: #4299e1; font-weight: 500; }
 
-/* 手机端折叠目录 — 桌面端隐藏 */
+/* 手机端组件 — 桌面端全部隐藏 */
 .mobile-nav {
+    display: none;
+}
+
+.mobile-nav-dropdown {
+    display: none;
+}
+
+.mobile-fixed-header {
     display: none;
 }
 
@@ -909,6 +917,7 @@ body {
 
     /* 目录下拉面板 */
     .mobile-nav-dropdown {
+        display: block;
         position: fixed;
         top: 0; /* 由JS动态设置 */
         left: 0;
