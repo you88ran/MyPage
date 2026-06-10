@@ -23,8 +23,16 @@ function getSearchEngine() {
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', () => {
+    // 清理旧版本 HTML 残留的 mobileNavList 容器，防止出现裸文字
+    const staleNavList = document.getElementById('mobileNavList');
+    if (staleNavList) {
+        const parent = staleNavList.closest('.mobile-nav');
+        if (parent) parent.remove();
+        else staleNavList.remove();
+    }
+
     const searchEngine = document.getElementById('searchEngine');
-    searchEngine.value = getSearchEngine();
+    if (searchEngine) searchEngine.value = getSearchEngine();
     
     checkLoginStatus();
     initializePage();
