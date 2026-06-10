@@ -91,6 +91,8 @@ function updateAdminButton() {
             </button>
         `;
     }
+    // 同步手机端管理员按钮
+    if (typeof syncMobileAdminButton === 'function') syncMobileAdminButton();
 }
 
 function enterEditMode() {
@@ -428,25 +430,18 @@ async function loadNavigation() {
         navigationElement.innerHTML = html;
         groupNavElement.innerHTML = navHtml;
 
-        // 同步手机端抽屉目录
-        const mobileDrawerNav = document.getElementById("mobileDrawerNav");
-        if (mobileDrawerNav) {
-            mobileDrawerNav.innerHTML = navHtml;
-        }
+        // 同步手机端下拉目录
+        const mobileNavDropdown = document.getElementById('mobileNavDropdown');
+        if (mobileNavDropdown) mobileNavDropdown.innerHTML = navHtml;
+        // 同步手机端管理员按钮
+        if (typeof syncMobileAdminButton === 'function') syncMobileAdminButton();
         
         await loadIcons();
         
-        // 修复：先移除再添加，避免重复绑定scroll监听
-        window.removeEventListener('scroll', updateActiveNavItem);
         window.addEventListener('scroll', updateActiveNavItem);
     } catch (error) {
         navigationElement.innerHTML = `<div class="error" style="padding:40px;color:#e53e3e;text-align:center;">加载失败: ${error.message}</div>`;
         groupNavElement.innerHTML = `<div style="color:#e53e3e;font-size:13px;">加载失败</div>`;
-        // 修复：catch分支也要同步抽屉内容，避免打开抽屉时空白
-        const mobileDrawerNav = document.getElementById("mobileDrawerNav");
-        if (mobileDrawerNav) {
-            mobileDrawerNav.innerHTML = `<div style="padding:16px;color:#e53e3e;font-size:13px;">目录加载失败，请刷新重试</div>`;
-        }
     }
 }
 
@@ -459,15 +454,12 @@ function highlightNavItem(element) {
 
 function updateActiveNavItem() {
     const groups = document.querySelectorAll('.group');
+    const navItems = document.querySelectorAll('.nav-item');
     
-    groups.forEach((group) => {
+    groups.forEach((group, index) => {
         const rect = group.getBoundingClientRect();
         if (rect.top <= 100 && rect.bottom >= 100) {
-            // 修复：用groupId精确匹配导航项，替代按DOM顺序index匹配（避免桌面/抽屉重复nav-item导致错位）
-            const groupId = group.id;
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.toggle('active', item.getAttribute('data-group-id') === groupId);
-            });
+            if (navItems[index]) highlightNavItem(navItems[index]);
         }
     });
 }
@@ -783,49 +775,3 @@ async function loadIcons() {
         }
     }
 }
-
-// 返回顶部
-function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-// 监听滚动显示/隐藏返回顶部按钮
-window.addEventListener("scroll", function() {
-    const btn = document.getElementById("backToTop");
-    if (window.scrollY > 300) {
-        btn.classList.add("show");
-    } else {
-        btn.classList.remove("show");
-    }
-});
-
-// 手机端左侧抽屉
-document.addEventListener("DOMContentLoaded", function() {
-    const menuBtn = document.getElementById("mobileMenuBtn");
-    const drawer = document.getElementById("mobileDrawer");
-    const overlay = document.getElementById("mobileDrawerOverlay");
-    const closeBtn = document.getElementById("mobileDrawerClose");
-
-    if (menuBtn && drawer) {
-        function openDrawer() {
-            drawer.classList.add("active");
-            document.body.style.overflow = "hidden";
-        }
-
-        function closeDrawer() {
-            drawer.classList.remove("active");
-            document.body.style.overflow = "";
-        }
-
-        menuBtn.addEventListener("click", openDrawer);
-        if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
-        if (overlay) overlay.addEventListener("click", closeDrawer);
-
-        // 点击导航项后关闭抽屉
-        document.addEventListener("click", function(e) {
-            if (drawer.classList.contains("active") && e.target.closest(".mobile-drawer-nav .nav-item")) {
-                closeDrawer();
-            }
-        });
-    }
-});
