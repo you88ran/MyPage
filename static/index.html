@@ -35,6 +35,9 @@
             <div id="groupNav" class="nav-list"></div>
         </div>
 
+        <!-- 拖拽分隔线 -->
+        <div class="sidebar-resizer" id="sidebarResizer"></div>
+
         <!-- 主要内容区 -->
         <div class="main-content">
             <div class="page-header">
@@ -68,15 +71,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- 手机端折叠目录 -->
-            <div class="mobile-nav" id="mobileNav">
-                <div class="mobile-nav-title" onclick="toggleMobileNav()">
-                    <span><i class="fas fa-list"></i> 悠游导航</span>
-                    <i class="fas fa-chevron-down mobile-nav-icon" id="mobileNavIcon"></i>
-                </div>
-                <div class="mobile-nav-list" id="mobileNavList"></div>
             </div>
 
             <!-- 导航内容 -->
@@ -275,8 +269,40 @@
         window.addEventListener('DOMContentLoaded', () => {
             initMobileHeader();
         });
-        // app.js 加载导航后同步手机端目录
-        const _origUpdateAdminButton = window.updateAdminButton;
+        // ===== 侧边栏拖拽缩放 =====
+        (function() {
+            const resizer = document.getElementById('sidebarResizer');
+            const container = document.querySelector('.container');
+            if (!resizer || !container) return;
+
+            let startX, startWidth;
+
+            resizer.addEventListener('mousedown', function(e) {
+                startX = e.clientX;
+                startWidth = parseInt(getComputedStyle(document.getElementById('navSidebar')).width);
+                resizer.classList.add('dragging');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+
+                function onMouseMove(e) {
+                    const delta = e.clientX - startX;
+                    const newWidth = Math.min(400, Math.max(120, startWidth + delta));
+                    container.style.gridTemplateColumns = newWidth + 'px 4px 1fr';
+                }
+
+                function onMouseUp() {
+                    resizer.classList.remove('dragging');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                }
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+                e.preventDefault();
+            });
+        })();
     </script>
 </body>
 </html>
