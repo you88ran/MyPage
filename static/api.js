@@ -2,136 +2,163 @@
 const API_BASE_URL = 'https://dhhouduan.128668.xyz/api';
 let token = null;
 
-// Token 管理
+function getToken() {
+    return localStorage.getItem('admin_token');
+}
+
 function setToken(newToken) {
     token = newToken;
-    localStorage.setItem('admin_token', token);
+    if (newToken) {
+        localStorage.setItem('admin_token', newToken);
+    } else {
+        localStorage.removeItem('admin_token');
+    }
 }
 
-function getToken() {
-    if (!token) {
-        token = localStorage.getItem('admin_token');
-    }
-    return token;
-}
-
-// API 请求函数
-async function fetchAPI(endpoint, options = {}) {
-    const token = getToken();
-    if (token) {
-        options.headers = {
-            ...options.headers,
-            'Authorization': `Bearer ${token}`
-        };
-    }
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'API请求失败');
-    }
-
-    return response.json();
-}
-
-// API 函数
 async function login(password) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ password })
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || '登录失败');
-        }
-        
-        const data = await response.json();
-        if (data.token) {
-            setToken(data.token);
-        } else {
-            throw new Error('登录响应中没有找到 token');
-        }
-        return data;
-    } catch (error) {
-        setToken(null);
-        throw new Error(error.message || '密码错误');
-    }
+    const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+    });
+    if (!response.ok) throw new Error('登录失败');
+    const data = await response.json();
+    setToken(data.token);
+    return data;
 }
 
+function authHeaders() {
+    const t = getToken();
+    return t ? { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+}
+
+// ===== 分组 =====
 async function fetchGroups() {
-    return fetchAPI('/groups');
-}
-
-async function fetchLinks() {
-    return fetchAPI('/links');
+    const response = await fetch(`${API_BASE_URL}/groups`, { headers: authHeaders() });
+    if (!response.ok) throw new Error('获取分组失败');
+    return response.json();
 }
 
 async function createGroup(data) {
-    return fetchAPI('/groups', {
+    const response = await fetch(`${API_BASE_URL}/groups`, {
         method: 'POST',
+        headers: authHeaders(),
         body: JSON.stringify(data)
     });
+    if (!response.ok) throw new Error('创建分组失败');
+    return response.json();
 }
 
 async function updateGroup(id, data) {
-    return fetchAPI(`/groups/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/groups/${id}`, {
         method: 'PUT',
+        headers: authHeaders(),
         body: JSON.stringify(data)
     });
+    if (!response.ok) throw new Error('更新分组失败');
+    return response.json();
 }
 
 async function deleteGroup(id) {
-    return fetchAPI(`/groups/${id}`, {
-        method: 'DELETE'
+    const response = await fetch(`${API_BASE_URL}/groups/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders()
     });
+    if (!response.ok) throw new Error('删除分组失败');
+    return response.json();
+}
+
+// ===== 链接 =====
+async function fetchLinks() {
+    const response = await fetch(`${API_BASE_URL}/links`, { headers: authHeaders() });
+    if (!response.ok) throw new Error('获取链接失败');
+    return response.json();
 }
 
 async function createLink(data) {
-    return fetchAPI('/links', {
+    const response = await fetch(`${API_BASE_URL}/links`, {
         method: 'POST',
+        headers: authHeaders(),
         body: JSON.stringify(data)
     });
+    if (!response.ok) throw new Error('创建链接失败');
+    return response.json();
 }
 
 async function updateLink(id, data) {
-    return fetchAPI(`/links/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/links/${id}`, {
         method: 'PUT',
+        headers: authHeaders(),
         body: JSON.stringify(data)
     });
+    if (!response.ok) throw new Error('更新链接失败');
+    return response.json();
 }
 
 async function deleteLink(id) {
-    return fetchAPI(`/links/${id}`, {
-        method: 'DELETE'
+    const response = await fetch(`${API_BASE_URL}/links/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders()
     });
+    if (!response.ok) throw new Error('删除链接失败');
+    return response.json();
 }
 
-// 获取网页信息
+// ===== 网页信息抓取 =====
 async function fetchWebInfo(url) {
     const response = await fetch(`${API_BASE_URL}/fetch-info`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: authHeaders(),
         body: JSON.stringify({ url })
     });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '获取网页信息失败');
-    }
-
+    if (!response.ok) throw new Error('获取网页信息失败');
     return response.json();
-} 
+}
+
+// ===== 图标 R2 缓存 =====
+async function getIconFromCache(domain) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/icon-cache?domain=${encodeURIComponent(domain)}`);
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.url || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+async function saveIconToCache(domain) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/icon-cache?domain=${encodeURIComponent(domain)}`, {
+            method: 'POST',
+            headers: authHeaders()
+        });
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.url || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+// ===== 链接失效检测 =====
+async function checkLinksHealth(urls) {
+    const response = await fetch(`${API_BASE_URL}/check-links`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ urls })
+    });
+    if (!response.ok) throw new Error('检测失败');
+    return response.json();
+}
+
+// ===== 批量添加链接 =====
+async function batchCreateLinks(links) {
+    const response = await fetch(`${API_BASE_URL}/links/batch`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ links })
+    });
+    if (!response.ok) throw new Error('批量添加失败');
+    return response.json();
+}
