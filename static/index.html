@@ -163,6 +163,47 @@
     <!-- 手机端目录下拉面板 -->
     <div class="mobile-nav-dropdown" id="mobileNavDropdown"></div>
 
+    <!-- 批量添加链接模态框 -->
+    <div id="batchAddModal" class="modal">
+        <div class="modal-content" style="max-width:580px;">
+            <span class="close" onclick="closeBatchAdd()"></span>
+            <h2><i class="fas fa-layer-group" style="color:#4299e1;margin-right:8px;"></i>批量添加链接</h2>
+            <select id="batchAddGroup" style="width:100%;padding:10px;margin-bottom:10px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc;">
+                <option value="">选择目标分组...</option>
+            </select>
+            <textarea id="batchUrls" placeholder="每行输入一个URL，例如：&#10;https://www.google.com&#10;https://github.com&#10;https://www.youtube.com" style="width:100%;min-height:150px;padding:10px;border:2px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:monospace;background:#f8fafc;resize:vertical;margin-bottom:10px;"></textarea>
+            <div id="batchProgress" style="display:none;margin-bottom:10px;">
+                <div style="background:#e2e8f0;border-radius:4px;height:8px;overflow:hidden;">
+                    <div id="batchProgressFill" style="height:100%;background:#4299e1;width:0%;transition:width 0.3s;"></div>
+                </div>
+                <div id="batchProgressText" style="font-size:12px;color:#718096;margin-top:4px;"></div>
+            </div>
+            <div id="batchResults" style="max-height:200px;overflow-y:auto;margin-bottom:10px;font-size:13px;"></div>
+            <button id="batchSubmitBtn" onclick="handleBatchAdd()" style="width:100%;padding:11px;background:linear-gradient(135deg,#4299e1,#3182ce);color:white;border:none;border-radius:8px;cursor:pointer;font-size:15px;font-weight:500;">
+                <i class="fas fa-rocket"></i> 开始抓取并添加
+            </button>
+        </div>
+    </div>
+
+    <!-- 链接失效检测模态框 -->
+    <div id="checkLinksModal" class="modal">
+        <div class="modal-content" style="max-width:580px;">
+            <span class="close" onclick="closeCheckLinks()"></span>
+            <h2><i class="fas fa-heartbeat" style="color:#4299e1;margin-right:8px;"></i>链接失效检测</h2>
+            <p style="font-size:13px;color:#718096;margin-bottom:12px;">将逐一检测所有链接的可访问性，链接较多时需要一定时间。</p>
+            <div id="checkLinksProgress" style="display:none;margin-bottom:10px;">
+                <div style="background:#e2e8f0;border-radius:4px;height:8px;overflow:hidden;">
+                    <div id="checkProgressFill" style="height:100%;background:#4299e1;width:0%;transition:width 0.3s;"></div>
+                </div>
+                <div id="checkProgressText" style="font-size:12px;color:#718096;margin-top:4px;"></div>
+            </div>
+            <div id="checkLinksResults" style="max-height:300px;overflow-y:auto;margin-bottom:12px;font-size:13px;"></div>
+            <button id="checkLinksStartBtn" onclick="startCheckLinks()" style="width:100%;padding:11px;background:linear-gradient(135deg,#4299e1,#3182ce);color:white;border:none;border-radius:8px;cursor:pointer;font-size:15px;font-weight:500;">
+                <i class="fas fa-play"></i> 开始检测
+            </button>
+        </div>
+    </div>
+
     <script src="api.js"></script>
     <script src="app.js"></script>
     <script>
