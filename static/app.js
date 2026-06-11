@@ -360,39 +360,24 @@ async function getIconUrl({ url }) {
         const localCached = localStorage.getItem(localKey);
         if (localCached) return localCached;
 
-        // 2. 查 R2 缓存
+        // 2. 查 R2 缓存（Worker 端已抓取存储）
         const r2Url = await getIconFromCache(domain);
         if (r2Url) {
             localStorage.setItem(localKey, r2Url);
             return r2Url;
         }
 
-        // 3. 抓取并存入 R2
+        // 3. 让 Worker 抓取并存入 R2
         const saved = await saveIconToCache(domain);
         if (saved) {
             localStorage.setItem(localKey, saved);
             return saved;
         }
 
-        // 4. 降级：直接用外部图标服务
-        const fallbackUrls = [
-            `https://icon.horse/icon/${domain}`,
-            `https://api.faviconkit.com/${domain}/64`,
-        ];
-        for (const iconUrl of fallbackUrls) {
-            try {
-                const img = new Image();
-                await new Promise((resolve, reject) => {
-                    img.onload = resolve;
-                    img.onerror = reject;
-                    img.src = iconUrl;
-                    setTimeout(reject, 5000);
-                });
-                localStorage.setItem(localKey, iconUrl);
-                return iconUrl;
-            } catch (e) { continue; }
-        }
-        return null;
+        // 4. 降级：直接返回图标 URL，由 img onerror 处理失败
+        const fallback = `https://icon.horse/icon/${domain}`;
+        localStorage.setItem(localKey, fallback);
+        return fallback;
     } catch (error) {
         return null;
     }
