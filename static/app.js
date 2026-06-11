@@ -106,7 +106,41 @@ function updateAdminButton() {
 function enterEditMode() {
     isEditMode = true;
     updateAdminButton();
-    loadNavigation();
+    loadNavigation().then(() => {
+        // 进入编辑模式后自动检测链接失效
+        setTimeout(runLinkHealthCheck, 1000);
+    });
+}
+
+// 链接失效检测
+async function runLinkHealthCheck() {
+    try {
+        const links = await fetchLinks();
+        if (!links.length) return;
+        const urlList = links.map(l => ({ id: l.id, url: l.url }));
+        showToast(`正在检测 ${urlList.length} 个链接...`, 'loading');
+        const results = await checkLinksHealth(urlList);
+        const failedIds = new Set(results.filter(r => !r.ok).map(r => r.id));
+        // 标记失效链接卡片
+        document.querySelectorAll('.link-card').forEach(card => {
+            const linkId = card.dataset.linkId;
+            if (linkId && failedIds.has(parseInt(linkId))) {
+                card.classList.add('link-dead');
+            }
+        });
+        const failCount = failedIds.size;
+        const toast = document.querySelector('.toast.loading');
+        if (toast) toast.remove();
+        if (failCount > 0) {
+            showToast(`检测完成：${failCount} 个链接可能失效（红色标注）`, 'error');
+        } else {
+            showToast('检测完成：所有链接正常');
+        }
+    } catch (e) {
+        const toast = document.querySelector('.toast.loading');
+        if (toast) toast.remove();
+        showToast('链接检测失败: ' + e.message, 'error');
+    }
 }
 
 function exitEditMode() {
@@ -321,33 +355,43 @@ const iconCache = new Map();
 async function getIconUrl({ url }) {
     try {
         const domain = new URL(url).hostname;
-        const cacheKey = `icon_cache_${domain}`;
-        const cachedUrl = localStorage.getItem(cacheKey);
-        if (cachedUrl) {
-            return cachedUrl;
+        // 1. 先查 localStorage 缓存
+        const localKey = `icon_cache_${domain}`;
+        const localCached = localStorage.getItem(localKey);
+        if (localCached) return localCached;
+
+        // 2. 查 R2 缓存
+        const r2Url = await getIconFromCache(domain);
+        if (r2Url) {
+            localStorage.setItem(localKey, r2Url);
+            return r2Url;
         }
-        
-        const iconUrls = [
+
+        // 3. 抓取并存入 R2
+        const saved = await saveIconToCache(domain);
+        if (saved) {
+            localStorage.setItem(localKey, saved);
+            return saved;
+        }
+
+        // 4. 降级：直接用外部图标服务
+        const fallbackUrls = [
             `https://icon.horse/icon/${domain}`,
-            `https://api.faviconkit.com/${domain}/144`,
-            `https://${domain}/favicon.ico`
+            `https://api.faviconkit.com/${domain}/64`,
         ];
-        
-        for (const iconUrl of iconUrls) {
+        for (const iconUrl of fallbackUrls) {
             try {
                 const img = new Image();
                 await new Promise((resolve, reject) => {
                     img.onload = resolve;
                     img.onerror = reject;
                     img.src = iconUrl;
+                    setTimeout(reject, 5000);
                 });
-                localStorage.setItem(cacheKey, iconUrl);
+                localStorage.setItem(localKey, iconUrl);
                 return iconUrl;
-            } catch (error) {
-                continue;
-            }
+            } catch (e) { continue; }
         }
-        
         return null;
     } catch (error) {
         return null;
@@ -390,9 +434,15 @@ async function loadNavigation() {
                     <button onclick="openLinkModal()">
                         <i class="fas fa-link"></i> 添加链接
                     </button>
+                    <button onclick="openBatchAdd()">
+                        <i class="fas fa-layer-group"></i> 批量添加
+                    </button>
+                    <button onclick="openCheckLinks()">
+                        <i class="fas fa-heartbeat"></i> 检测失效
+                    </button>
                 </div>
             `;
-        }
+        } else {
         
         if (groups.length === 0) {
             navigationElement.innerHTML = html + '<div style="padding:40px;color:#888;text-align:center;">暂无内容，请登录后添加分组和链接</div>';
@@ -736,7 +786,7 @@ function getLinkCard(link) {
     const iconSrc = link.logo || '#';
 
     return `
-        <a href="${link.url}" target="_blank" class="link-card">
+        <a href="${link.url}" target="_blank" class="link-card" data-link-id="${link.id}">
             <div class="link-info">
                 <div class="link-icon">
                     <img src="${iconSrc}" 
@@ -762,6 +812,203 @@ function getLinkCard(link) {
             ` : ''}
         </a>
     `;
+}
+
+
+// ========== 快速添加书签 ==========
+function openQuickAdd() {
+    if (!isEditMode) { showToast('请先进入编辑模式', 'error'); return; }
+    const modal = document.getElementById('quickAddModal');
+    document.getElementById('quickAddForm').reset();
+    updateQuickAddGroupSelect();
+    modal.style.display = 'block';
+}
+
+function closeQuickAdd() {
+    document.getElementById('quickAddModal').style.display = 'none';
+}
+
+async function updateQuickAddGroupSelect() {
+    const select = document.getElementById('quickAddGroup');
+    const groups = await fetchGroups();
+    select.innerHTML = '<option value="">选择分组...</option>' +
+        groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+}
+
+async function fetchQuickInfo() {
+    const urlVal = document.getElementById('quickAddUrl').value.trim();
+    if (!urlVal) { showToast('请先输入网址', 'error'); return; }
+    const toast = showToast('正在获取网页信息...', 'loading');
+    try {
+        const [info, iconUrl] = await Promise.all([
+            fetchWebInfo(urlVal),
+            getIconUrl({ url: urlVal })
+        ]);
+        if (!document.getElementById('quickAddName').value) document.getElementById('quickAddName').value = info.title || '';
+        if (!document.getElementById('quickAddLogo').value) document.getElementById('quickAddLogo').value = iconUrl || '';
+        if (!document.getElementById('quickAddDesc').value) document.getElementById('quickAddDesc').value = info.description || '';
+        toast.remove(); showToast('填充成功');
+    } catch(e) { toast.remove(); showToast('获取失败: ' + e.message, 'error'); }
+}
+
+async function handleQuickAdd(event) {
+    event.preventDefault();
+    const groupId = parseInt(document.getElementById('quickAddGroup').value);
+    if (!groupId) { showToast('请选择分组', 'error'); return; }
+    const links = await fetchLinks();
+    const groupLinks = links.filter(l => l.group_id === groupId);
+    const maxOrder = groupLinks.reduce((m, l) => Math.max(m, l.order_num || 0), 0);
+    const formData = {
+        name: document.getElementById('quickAddName').value,
+        url: document.getElementById('quickAddUrl').value,
+        logo: document.getElementById('quickAddLogo').value,
+        description: document.getElementById('quickAddDesc').value,
+        group_id: groupId,
+        order_num: maxOrder + 1
+    };
+    const toast = showToast('保存中...', 'loading');
+    try {
+        await createLink(formData);
+        toast.remove(); showToast('添加成功');
+        closeQuickAdd();
+        await loadNavigation();
+    } catch(e) { toast.remove(); showToast('保存失败: ' + e.message, 'error'); }
+}
+
+// ========== 批量添加链接 ==========
+function openBatchAdd() {
+    if (!isEditMode) { showToast('请先进入编辑模式', 'error'); return; }
+    document.getElementById('batchUrls').value = '';
+    document.getElementById('batchResults').innerHTML = '';
+    document.getElementById('batchProgress').style.display = 'none';
+    document.getElementById('batchSubmitBtn').disabled = false;
+    updateBatchGroupSelect();
+    document.getElementById('batchAddModal').style.display = 'block';
+}
+
+function closeBatchAdd() {
+    document.getElementById('batchAddModal').style.display = 'none';
+}
+
+async function updateBatchGroupSelect() {
+    const select = document.getElementById('batchAddGroup');
+    const groups = await fetchGroups();
+    select.innerHTML = '<option value="">选择目标分组...</option>' +
+        groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+}
+
+async function handleBatchAdd() {
+    const groupId = parseInt(document.getElementById('batchAddGroup').value);
+    if (!groupId) { showToast('请选择分组', 'error'); return; }
+    const raw = document.getElementById('batchUrls').value.trim();
+    if (!raw) { showToast('请输入网址', 'error'); return; }
+    const urls = [...new Set(raw.split('\n').map(u => u.trim()).filter(u => u && u.startsWith('http')))];
+    if (urls.length === 0) { showToast('未找到有效网址', 'error'); return; }
+
+    const btn = document.getElementById('batchSubmitBtn');
+    btn.disabled = true;
+    const progress = document.getElementById('batchProgress');
+    const fill = document.getElementById('batchProgressFill');
+    const text = document.getElementById('batchProgressText');
+    const results = document.getElementById('batchResults');
+    progress.style.display = 'block';
+    results.innerHTML = '';
+
+    // 获取当前分组最大序号
+    const existingLinks = await fetchLinks();
+    const groupLinks = existingLinks.filter(l => l.group_id === groupId);
+    let maxOrder = groupLinks.reduce((m, l) => Math.max(m, l.order_num || 0), 0);
+
+    let ok = 0, fail = 0;
+    for (let i = 0; i < urls.length; i++) {
+        const url = urls[i];
+        const pct = Math.round((i / urls.length) * 100);
+        fill.style.width = pct + '%';
+        text.textContent = `处理中 ${i + 1}/${urls.length}：${url}`;
+
+        try {
+            const [info, iconUrl] = await Promise.allSettled([
+                fetchWebInfo(url),
+                getIconUrl({ url })
+            ]);
+            const title = info.status === 'fulfilled' ? (info.value.title || url) : url;
+            const icon = iconUrl.status === 'fulfilled' ? (iconUrl.value || '') : '';
+            const desc = info.status === 'fulfilled' ? (info.value.description || '') : '';
+            maxOrder += 1;
+            await createLink({ name: title, url, logo: icon, description: desc, group_id: groupId, order_num: maxOrder });
+            results.innerHTML += `<div class="batch-result-item ok"><i class="fas fa-check-circle"></i> ${title}</div>`;
+            ok++;
+        } catch(e) {
+            results.innerHTML += `<div class="batch-result-item fail"><i class="fas fa-times-circle"></i> ${url} — ${e.message}</div>`;
+            fail++;
+        }
+        results.scrollTop = results.scrollHeight;
+    }
+
+    fill.style.width = '100%';
+    text.textContent = `完成！成功 ${ok} 个，失败 ${fail} 个`;
+    btn.disabled = false;
+    if (ok > 0) await loadNavigation();
+}
+
+// ========== 链接失效检测 ==========
+function openCheckLinks() {
+    if (!isEditMode) { showToast('请先进入编辑模式', 'error'); return; }
+    document.getElementById('checkLinksResults').innerHTML = '';
+    document.getElementById('checkLinksProgress').style.display = 'none';
+    document.getElementById('checkLinksStartBtn').disabled = false;
+    document.getElementById('checkLinksModal').style.display = 'block';
+}
+
+function closeCheckLinks() {
+    document.getElementById('checkLinksModal').style.display = 'none';
+}
+
+async function startCheckLinks() {
+    const btn = document.getElementById('checkLinksStartBtn');
+    btn.disabled = true;
+    const progress = document.getElementById('checkLinksProgress');
+    const fill = document.getElementById('checkProgressFill');
+    const text = document.getElementById('checkProgressText');
+    const results = document.getElementById('checkLinksResults');
+    progress.style.display = 'block';
+    results.innerHTML = '';
+
+    const links = await fetchLinks();
+    if (links.length === 0) { showToast('暂无链接', 'error'); btn.disabled = false; return; }
+
+    let ok = 0, fail = 0, total = links.length;
+    for (let i = 0; i < links.length; i++) {
+        const link = links[i];
+        const pct = Math.round((i / total) * 100);
+        fill.style.width = pct + '%';
+        text.textContent = `检测中 ${i + 1}/${total}：${link.name}`;
+
+        try {
+            const resp = await fetch(`${API_BASE_URL}/check-links`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+                body: JSON.stringify({ urls: [{ id: link.id, url: link.url }] })
+            });
+            const data = await resp.json();
+            const result = Array.isArray(data) ? data[0] : data;
+            if (result && result.ok) {
+                results.innerHTML += `<div class="batch-result-item ok"><i class="fas fa-check-circle"></i> <a href="${link.url}" target="_blank">${link.name}</a> <span class="check-status">${result.status}</span></div>`;
+                ok++;
+            } else {
+                results.innerHTML += `<div class="batch-result-item fail"><i class="fas fa-times-circle"></i> <a href="${link.url}" target="_blank">${link.name}</a> <span class="check-status">${result?.status || '无法访问'}</span></div>`;
+                fail++;
+            }
+        } catch(e) {
+            results.innerHTML += `<div class="batch-result-item fail"><i class="fas fa-times-circle"></i> <a href="${link.url}" target="_blank">${link.name}</a> <span class="check-status">请求失败</span></div>`;
+            fail++;
+        }
+        results.scrollTop = results.scrollHeight;
+    }
+
+    fill.style.width = '100%';
+    text.textContent = `检测完成！正常 ${ok} 个，异常 ${fail} 个`;
+    btn.disabled = false;
 }
 
 async function loadIcons() {
