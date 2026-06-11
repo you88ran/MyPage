@@ -442,7 +442,7 @@ async function loadNavigation() {
                     </button>
                 </div>
             `;
-        } else {
+        }
         
         if (groups.length === 0) {
             navigationElement.innerHTML = html + '<div style="padding:40px;color:#888;text-align:center;">暂无内容，请登录后添加分组和链接</div>';
