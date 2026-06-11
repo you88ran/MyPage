@@ -374,10 +374,8 @@ async function getIconUrl({ url }) {
             return saved;
         }
 
-        // 4. 降级：直接返回图标 URL，由 img onerror 处理失败
-        const fallback = `https://icon.horse/icon/${domain}`;
-        localStorage.setItem(localKey, fallback);
-        return fallback;
+        // 4. 降级：用 icon.horse（支持跨域），onerror 会处理失败
+        return `https://icon.horse/icon/${domain}`;
     } catch (error) {
         return null;
     }
