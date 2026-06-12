@@ -374,8 +374,8 @@ async function getIconUrl({ url }) {
             return saved;
         }
 
-        // 4. 降级：用 icon.horse（支持跨域），onerror 会处理失败
-        return `https://icon.horse/icon/${domain}`;
+        // 4. 降级：用 Google favicon 服务，覆盖面最广且支持跨域
+        return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
     } catch (error) {
         return null;
     }
@@ -408,23 +408,29 @@ async function loadNavigation() {
         let html = '';
         let navHtml = '';
         
-        if (isEditMode) {
-            html += `
-                <div class="admin-controls">
-                    <button onclick="openGroupModal()">
-                        <i class="fas fa-folder-plus"></i> 添加分组
-                    </button>
-                    <button onclick="openLinkModal()">
-                        <i class="fas fa-link"></i> 添加链接
-                    </button>
-                    <button onclick="openBatchAdd()">
-                        <i class="fas fa-layer-group"></i> 批量添加
-                    </button>
-                    <button onclick="openCheckLinks()">
-                        <i class="fas fa-heartbeat"></i> 检测失效
-                    </button>
-                </div>
-            `;
+        // 编辑模式操作栏渲染到 page-header 固定区域
+        const adminControlsEl = document.getElementById('adminControlsBar');
+        if (adminControlsEl) {
+            if (isEditMode) {
+                adminControlsEl.innerHTML = `
+                    <div class="admin-controls">
+                        <button onclick="openGroupModal()">
+                            <i class="fas fa-folder-plus"></i> 添加分组
+                        </button>
+                        <button onclick="openLinkModal()">
+                            <i class="fas fa-link"></i> 添加链接
+                        </button>
+                        <button onclick="openBatchAdd()">
+                            <i class="fas fa-layer-group"></i> 批量添加
+                        </button>
+                        <button onclick="openCheckLinks()">
+                            <i class="fas fa-heartbeat"></i> 检测失效
+                        </button>
+                    </div>
+                `;
+            } else {
+                adminControlsEl.innerHTML = '';
+            }
         }
         
         if (groups.length === 0) {
@@ -766,7 +772,8 @@ function getLinkCard(link) {
         </svg>
     `.trim());
 
-    const iconSrc = link.logo || '#';
+    const domain = (() => { try { return new URL(link.url).hostname; } catch(e) { return ''; } })();
+    const iconSrc = link.logo || (domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64` : '#');
 
     return `
         <a href="${link.url}" target="_blank" class="link-card" data-link-id="${link.id}">
@@ -1001,11 +1008,13 @@ async function loadIcons() {
             const url = img.dataset.url;
             if (url) {
                 try {
-                    const iconUrl = await getIconUrl({ url });
-                    if (iconUrl) {
-                        img.src = iconUrl;
-                        img.crossOrigin = 'anonymous';
-                    }
+                    const domain = new URL(url).hostname;
+                    // 先显示 Google favicon 作为即时占位（无跨域问题）
+                    img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+                    // 后台尝试从 R2 获取更高质量图标
+                    getIconUrl({ url }).then(iconUrl => {
+                        if (iconUrl && img.isConnected) img.src = iconUrl;
+                    }).catch(() => {});
                 } catch (error) {
                     // 保持默认图标
                 }
