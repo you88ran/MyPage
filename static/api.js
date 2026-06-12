@@ -127,8 +127,15 @@ async function getIconFromCache(domain) {
     }
 }
 
-async function saveIconToCache(domain) {
+async function saveIconToCache(domain, forceRefresh = false) {
     try {
+        // 强制刷新时先删除 R2 缓存
+        if (forceRefresh) {
+            await fetch(`${API_BASE_URL}/icon-cache?domain=${encodeURIComponent(domain)}`, {
+                method: 'DELETE',
+                headers: authHeaders()
+            }).catch(() => {});
+        }
         const response = await fetch(`${API_BASE_URL}/icon-cache?domain=${encodeURIComponent(domain)}`, {
             method: 'POST',
             headers: authHeaders()
