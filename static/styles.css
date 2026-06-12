@@ -18,14 +18,15 @@ body {
     grid-template-columns: 200px 4px 1fr;
     gap: 0;
     width: 100%;
-    min-height: 100vh;
+    height: 100vh;
     padding: 0;
     animation: fadeIn 0.5s ease;
+    overflow: hidden;
 }
 
 /* 侧边导航 */
 .nav-sidebar {
-    position: sticky;
+    position: relative;
     top: 0;
     height: 100vh;
     background: rgba(255, 255, 255, 0.97);
@@ -124,8 +125,20 @@ body {
 /* 主内容区 */
 .main-content {
     min-width: 0;
-    padding: 20px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
     overflow: hidden;
+}
+
+/* 固定顶部区域（搜索栏 + 编辑模式操作栏） */
+.page-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: #f0f4f8;
+    padding: 12px 20px 0;
 }
 
 /* 头部 */
@@ -133,7 +146,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 0;
     padding: 12px 20px;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.07);
@@ -206,6 +219,13 @@ body {
 }
 
 /* 分组 */
+.navigation {
+    padding: 16px 20px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0; /* flex 子元素滚动必须 */
+}
+
 .group {
     animation: fadeIn 0.4s ease;
     margin-bottom: 16px;
@@ -393,16 +413,18 @@ body {
     color: white;
 }
 
-/* 管理员控制 */
+/* 管理员控制 — 固定在搜索栏下方 */
 .admin-controls {
-    margin-bottom: 16px;
     display: flex;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
+    padding: 10px 0 10px;
+    margin-bottom: 0;
+    background: #f0f4f8;
 }
 
 .admin-controls button {
-    padding: 8px 16px;
+    padding: 7px 14px;
     background: linear-gradient(135deg, #4299e1, #3182ce);
     color: white;
     border: none;
@@ -410,9 +432,10 @@ body {
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
+    gap: 6px;
+    font-size: 13px;
     transition: all 0.25s;
+    white-space: nowrap;
 }
 
 .admin-controls button:hover {
