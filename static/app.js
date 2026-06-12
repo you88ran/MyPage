@@ -101,6 +101,10 @@ function updateAdminButton() {
     }
     // 同步手机端管理员按钮
     if (typeof syncMobileAdminButton === 'function') syncMobileAdminButton();
+
+    // 快速添加按钮：登录后显示
+    const quickAddBtn = document.getElementById('quickAddBtn');
+    if (quickAddBtn) quickAddBtn.style.display = isAdmin ? 'flex' : 'none';
 }
 
 function enterEditMode() {
@@ -333,7 +337,9 @@ async function handleGroupSubmit(event) {
     const formData = {
         name: document.getElementById('groupName').value,
         is_private: document.getElementById('groupPrivate').checked,
-        order_num: groupId ? parseInt(event.target.dataset.orderNum) || 0 : maxOrderNum + 1
+        order_num: groupId ? parseInt(event.target.dataset.orderNum) || 0 : maxOrderNum + 1,
+        color: document.getElementById('groupColor').value || null,
+        icon: document.getElementById('groupIcon').value || null
     };
     
     try {
@@ -426,6 +432,9 @@ async function loadNavigation() {
                         <button onclick="openCheckLinks()">
                             <i class="fas fa-heartbeat"></i> 检测失效
                         </button>
+                    <button onclick="refreshAllIcons()">
+                            <i class="fas fa-images"></i> 刷新图标
+                        </button>
                     </div>
                 `;
             } else {
@@ -445,8 +454,9 @@ async function loadNavigation() {
                 const groupLinks = links.filter(link => link.group_id === group.id);
                 const groupId = `group-${group.id}`;
                 
+                const groupColor = group.color || '#4299e1';
                 html += `
-                    <div id="${groupId}" class="group">
+                    <div id="${groupId}" class="group" style="--group-color:${groupColor};">
                         <div class="group-title">
                             ${getGroupTitle(group)}
                             ${getGroupActions(group.id)}
@@ -476,6 +486,16 @@ async function loadNavigation() {
         
         navigationElement.innerHTML = html;
         groupNavElement.innerHTML = navHtml;
+
+        // 应用分组自定义颜色到下划线
+        groups.forEach(group => {
+            const color = group.color || '#4299e1';
+            const el = document.getElementById(`group-${group.id}`);
+            if (el) {
+                const after = el.querySelector('.group-title');
+                if (after) after.style.setProperty('--group-color', color);
+            }
+        });
 
         // 同步手机端下拉目录
         const mobileNavDropdown = document.getElementById('mobileNavDropdown');
@@ -578,6 +598,8 @@ async function loadGroupData(groupId) {
         if (group) {
             document.getElementById('groupName').value = group.name;
             document.getElementById('groupPrivate').checked = group.is_private;
+            document.getElementById('groupColor').value = group.color || '#4299e1';
+            document.getElementById('groupIcon').value = group.icon || '';
             const form = document.getElementById('groupForm');
             form.dataset.groupId = groupId;
             form.dataset.orderNum = group.order_num;
@@ -753,9 +775,14 @@ function getGroupActions(groupId) {
 }
 
 function getGroupTitle(group) {
+    const color = group.color || '#4299e1';
+    const iconHtml = group.icon
+        ? `<span class="group-custom-icon" style="color:${color}">${group.icon}</span>`
+        : `<span class="group-color-dot" style="background:${color}"></span>`;
     return `
         <div class="group-title-left">
-            ${group.name}
+            ${iconHtml}
+            <span style="border-bottom: 2px solid ${color}; padding-bottom:1px;">${group.name}</span>
             ${group.is_private ? 
                 `<i class="fas fa-lock group-privacy-icon" title="私密分组"></i>` : 
                 (isEditMode ? `<i class="fas fa-lock-open group-privacy-icon" title="公开分组"></i>` : '')
@@ -797,6 +824,7 @@ function getLinkCard(link) {
                         <button onclick="moveLinkDown(${link.id}, ${link.group_id})" title="下移"><i class="fas fa-arrow-down"></i></button>
                     </div>
                     <button onclick="openLinkModal(${link.id})" title="编辑"><i class="fas fa-edit"></i></button>
+                    <button onclick="refreshLinkIcon(event, ${link.id}, encodeURIComponent('${link.url}'))" title="刷新图标"><i class="fas fa-sync-alt"></i></button>
                     <button onclick="deleteLinkConfirm(${link.id})" title="删除"><i class="fas fa-trash"></i></button>
                 </div>
             ` : ''}
@@ -807,11 +835,15 @@ function getLinkCard(link) {
 
 // ========== 快速添加书签 ==========
 function openQuickAdd() {
-    if (!isEditMode) { showToast('请先进入编辑模式', 'error'); return; }
-    const modal = document.getElementById('quickAddModal');
-    document.getElementById('quickAddForm').reset();
+    if (!isAdmin) { showToast('请先登录管理员账号', 'error'); return; }
+    document.getElementById('quickAddUrl').value = '';
+    document.getElementById('quickAddName').value = '';
+    document.getElementById('quickAddLogo').value = '';
+    document.getElementById('quickAddDesc').value = '';
+    document.getElementById('quickAddInfo').style.display = 'none';
     updateQuickAddGroupSelect();
-    modal.style.display = 'block';
+    document.getElementById('quickAddModal').style.display = 'block';
+    setTimeout(() => document.getElementById('quickAddUrl').focus(), 100);
 }
 
 function closeQuickAdd() {
@@ -825,200 +857,67 @@ async function updateQuickAddGroupSelect() {
         groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
 }
 
-async function fetchQuickInfo() {
-    const urlVal = document.getElementById('quickAddUrl').value.trim();
-    if (!urlVal) { showToast('请先输入网址', 'error'); return; }
-    const toast = showToast('正在获取网页信息...', 'loading');
+async function quickAddFetchInfo() {
+    const url = document.getElementById('quickAddUrl').value.trim();
+    if (!url || !url.startsWith('http')) return;
+    const infoEl = document.getElementById('quickAddInfo');
+    infoEl.style.display = 'block';
+    infoEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在获取网页信息...';
     try {
-        const [info, iconUrl] = await Promise.all([
-            fetchWebInfo(urlVal),
-            getIconUrl({ url: urlVal })
+        const [info, iconUrl] = await Promise.allSettled([
+            fetchWebInfo(url),
+            getIconUrl({ url })
         ]);
-        if (!document.getElementById('quickAddName').value) document.getElementById('quickAddName').value = info.title || '';
-        if (!document.getElementById('quickAddLogo').value) document.getElementById('quickAddLogo').value = iconUrl || '';
-        if (!document.getElementById('quickAddDesc').value) document.getElementById('quickAddDesc').value = info.description || '';
-        toast.remove(); showToast('填充成功');
-    } catch(e) { toast.remove(); showToast('获取失败: ' + e.message, 'error'); }
+        if (info.status === 'fulfilled' && info.value.title) {
+            if (!document.getElementById('quickAddName').value)
+                document.getElementById('quickAddName').value = info.value.title;
+            if (!document.getElementById('quickAddDesc').value)
+                document.getElementById('quickAddDesc').value = info.value.description || '';
+        }
+        if (iconUrl.status === 'fulfilled' && iconUrl.value) {
+            document.getElementById('quickAddLogo').value = iconUrl.value;
+        }
+        infoEl.innerHTML = '<i class="fas fa-check-circle" style="color:#48bb78;"></i> 信息获取成功';
+        setTimeout(() => { infoEl.style.display = 'none'; }, 2000);
+    } catch(e) {
+        infoEl.innerHTML = '<i class="fas fa-exclamation-circle" style="color:#e53e3e;"></i> 获取失败，请手动填写';
+    }
 }
 
-async function handleQuickAdd(event) {
-    event.preventDefault();
+async function handleQuickAdd() {
+    const url = document.getElementById('quickAddUrl').value.trim();
+    const name = document.getElementById('quickAddName').value.trim();
     const groupId = parseInt(document.getElementById('quickAddGroup').value);
+
+    if (!url) { showToast('请输入网址', 'error'); return; }
+    if (!name) { showToast('请输入名称', 'error'); return; }
     if (!groupId) { showToast('请选择分组', 'error'); return; }
-    const links = await fetchLinks();
-    const groupLinks = links.filter(l => l.group_id === groupId);
-    const maxOrder = groupLinks.reduce((m, l) => Math.max(m, l.order_num || 0), 0);
-    const formData = {
-        name: document.getElementById('quickAddName').value,
-        url: document.getElementById('quickAddUrl').value,
-        logo: document.getElementById('quickAddLogo').value,
-        description: document.getElementById('quickAddDesc').value,
-        group_id: groupId,
-        order_num: maxOrder + 1
-    };
-    const toast = showToast('保存中...', 'loading');
+
+    const btn = document.getElementById('quickAddSubmitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+
     try {
-        await createLink(formData);
-        toast.remove(); showToast('添加成功');
+        const links = await fetchLinks();
+        const groupLinks = links.filter(l => l.group_id === groupId);
+        const maxOrder = groupLinks.reduce((m, l) => Math.max(m, l.order_num || 0), 0);
+
+        await createLink({
+            name,
+            url,
+            logo: document.getElementById('quickAddLogo').value || '',
+            description: document.getElementById('quickAddDesc').value || '',
+            group_id: groupId,
+            order_num: maxOrder + 10
+        });
+
         closeQuickAdd();
+        showToast('书签添加成功');
         await loadNavigation();
-    } catch(e) { toast.remove(); showToast('保存失败: ' + e.message, 'error'); }
-}
-
-// ========== 批量添加链接 ==========
-function openBatchAdd() {
-    if (!isEditMode) { showToast('请先进入编辑模式', 'error'); return; }
-    document.getElementById('batchUrls').value = '';
-    document.getElementById('batchResults').innerHTML = '';
-    document.getElementById('batchProgress').style.display = 'none';
-    document.getElementById('batchSubmitBtn').disabled = false;
-    updateBatchGroupSelect();
-    document.getElementById('batchAddModal').style.display = 'block';
-}
-
-function closeBatchAdd() {
-    document.getElementById('batchAddModal').style.display = 'none';
-}
-
-async function updateBatchGroupSelect() {
-    const select = document.getElementById('batchAddGroup');
-    const groups = await fetchGroups();
-    select.innerHTML = '<option value="">选择目标分组...</option>' +
-        groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-}
-
-async function handleBatchAdd() {
-    const groupId = parseInt(document.getElementById('batchAddGroup').value);
-    if (!groupId) { showToast('请选择分组', 'error'); return; }
-    const raw = document.getElementById('batchUrls').value.trim();
-    if (!raw) { showToast('请输入网址', 'error'); return; }
-    const urls = [...new Set(raw.split('\n').map(u => u.trim()).filter(u => u && u.startsWith('http')))];
-    if (urls.length === 0) { showToast('未找到有效网址', 'error'); return; }
-
-    const btn = document.getElementById('batchSubmitBtn');
-    btn.disabled = true;
-    const progress = document.getElementById('batchProgress');
-    const fill = document.getElementById('batchProgressFill');
-    const text = document.getElementById('batchProgressText');
-    const results = document.getElementById('batchResults');
-    progress.style.display = 'block';
-    results.innerHTML = '';
-
-    // 获取当前分组最大序号
-    const existingLinks = await fetchLinks();
-    const groupLinks = existingLinks.filter(l => l.group_id === groupId);
-    let maxOrder = groupLinks.reduce((m, l) => Math.max(m, l.order_num || 0), 0);
-
-    let ok = 0, fail = 0;
-    for (let i = 0; i < urls.length; i++) {
-        const url = urls[i];
-        const pct = Math.round((i / urls.length) * 100);
-        fill.style.width = pct + '%';
-        text.textContent = `处理中 ${i + 1}/${urls.length}：${url}`;
-
-        try {
-            const [info, iconUrl] = await Promise.allSettled([
-                fetchWebInfo(url),
-                getIconUrl({ url })
-            ]);
-            const title = info.status === 'fulfilled' ? (info.value.title || url) : url;
-            const icon = iconUrl.status === 'fulfilled' ? (iconUrl.value || '') : '';
-            const desc = info.status === 'fulfilled' ? (info.value.description || '') : '';
-            maxOrder += 1;
-            await createLink({ name: title, url, logo: icon, description: desc, group_id: groupId, order_num: maxOrder });
-            results.innerHTML += `<div class="batch-result-item ok"><i class="fas fa-check-circle"></i> ${title}</div>`;
-            ok++;
-        } catch(e) {
-            results.innerHTML += `<div class="batch-result-item fail"><i class="fas fa-times-circle"></i> ${url} — ${e.message}</div>`;
-            fail++;
-        }
-        results.scrollTop = results.scrollHeight;
-    }
-
-    fill.style.width = '100%';
-    text.textContent = `完成！成功 ${ok} 个，失败 ${fail} 个`;
-    btn.disabled = false;
-    if (ok > 0) await loadNavigation();
-}
-
-// ========== 链接失效检测 ==========
-function openCheckLinks() {
-    if (!isEditMode) { showToast('请先进入编辑模式', 'error'); return; }
-    document.getElementById('checkLinksResults').innerHTML = '';
-    document.getElementById('checkLinksProgress').style.display = 'none';
-    document.getElementById('checkLinksStartBtn').disabled = false;
-    document.getElementById('checkLinksModal').style.display = 'block';
-}
-
-function closeCheckLinks() {
-    document.getElementById('checkLinksModal').style.display = 'none';
-}
-
-async function startCheckLinks() {
-    const btn = document.getElementById('checkLinksStartBtn');
-    btn.disabled = true;
-    const progress = document.getElementById('checkLinksProgress');
-    const fill = document.getElementById('checkProgressFill');
-    const text = document.getElementById('checkProgressText');
-    const results = document.getElementById('checkLinksResults');
-    progress.style.display = 'block';
-    results.innerHTML = '';
-
-    const links = await fetchLinks();
-    if (links.length === 0) { showToast('暂无链接', 'error'); btn.disabled = false; return; }
-
-    let ok = 0, fail = 0, total = links.length;
-    for (let i = 0; i < links.length; i++) {
-        const link = links[i];
-        const pct = Math.round((i / total) * 100);
-        fill.style.width = pct + '%';
-        text.textContent = `检测中 ${i + 1}/${total}：${link.name}`;
-
-        try {
-            const resp = await fetch(`${API_BASE_URL}/check-links`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
-                body: JSON.stringify({ urls: [{ id: link.id, url: link.url }] })
-            });
-            const data = await resp.json();
-            const result = Array.isArray(data) ? data[0] : data;
-            if (result && result.ok) {
-                results.innerHTML += `<div class="batch-result-item ok"><i class="fas fa-check-circle"></i> <a href="${link.url}" target="_blank">${link.name}</a> <span class="check-status">${result.status}</span></div>`;
-                ok++;
-            } else {
-                results.innerHTML += `<div class="batch-result-item fail"><i class="fas fa-times-circle"></i> <a href="${link.url}" target="_blank">${link.name}</a> <span class="check-status">${result?.status || '无法访问'}</span></div>`;
-                fail++;
-            }
-        } catch(e) {
-            results.innerHTML += `<div class="batch-result-item fail"><i class="fas fa-times-circle"></i> <a href="${link.url}" target="_blank">${link.name}</a> <span class="check-status">请求失败</span></div>`;
-            fail++;
-        }
-        results.scrollTop = results.scrollHeight;
-    }
-
-    fill.style.width = '100%';
-    text.textContent = `检测完成！正常 ${ok} 个，异常 ${fail} 个`;
-    btn.disabled = false;
-}
-
-async function loadIcons() {
-    const icons = document.querySelectorAll('.link-icon img');
-    for (const img of icons) {
-        if (img.dataset.autoIcon === 'true') {
-            const url = img.dataset.url;
-            if (url) {
-                try {
-                    const domain = new URL(url).hostname;
-                    // 先显示 Google favicon 作为即时占位（无跨域问题）
-                    img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-                    // 后台尝试从 R2 获取更高质量图标
-                    getIconUrl({ url }).then(iconUrl => {
-                        if (iconUrl && img.isConnected) img.src = iconUrl;
-                    }).catch(() => {});
-                } catch (error) {
-                    // 保持默认图标
-                }
-            }
-        }
+    } catch(e) {
+        showToast('添加失败: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-plus"></i> 添加书签';
     }
 }
