@@ -921,3 +921,75 @@ async function handleQuickAdd() {
         btn.innerHTML = '<i class="fas fa-plus"></i> 添加书签';
     }
 }
+
+// ========== 图标加载 ==========
+async function loadIcons() {
+    const icons = document.querySelectorAll('.link-icon img');
+    for (const img of icons) {
+        if (img.dataset.autoIcon === 'true') {
+            const url = img.dataset.url;
+            if (url) {
+                try {
+                    const domain = new URL(url).hostname;
+                    img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+                    getIconUrl({ url }).then(iconUrl => {
+                        if (iconUrl && img.isConnected) img.src = iconUrl;
+                    }).catch(() => {});
+                } catch (error) {}
+            }
+        }
+    }
+}
+
+// ========== 单个图标刷新 ==========
+async function refreshLinkIcon(event, linkId, encodedUrl) {
+    event.preventDefault();
+    event.stopPropagation();
+    const btn = event.currentTarget;
+    const card = btn.closest('.link-card');
+    const img = card ? card.querySelector('.link-icon img') : null;
+
+    let domain;
+    try { domain = new URL(decodeURIComponent(encodedUrl)).hostname; } catch(e) { return; }
+
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+
+    try {
+        localStorage.removeItem(`icon_cache_${domain}`);
+        const saved = await saveIconToCache(domain, true);
+        const newUrl = saved || `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+        if (img) img.src = newUrl;
+        localStorage.setItem(`icon_cache_${domain}`, newUrl);
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; btn.disabled = false; }, 1500);
+        showToast('图标已更新');
+    } catch (e) {
+        btn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+        btn.disabled = false;
+        showToast('刷新失败: ' + e.message, 'error');
+    }
+}
+
+// ========== 批量刷新所有图标 ==========
+async function refreshAllIcons() {
+    const links = await fetchLinks();
+    if (!links.length) { showToast('暂无链接', 'error'); return; }
+
+    const domains = [...new Set(links.map(l => {
+        try { return new URL(l.url).hostname; } catch(e) { return null; }
+    }).filter(Boolean))];
+
+    const toast = showToast(`正在刷新 ${domains.length} 个域名的图标...`, 'loading');
+    let done = 0;
+    for (const domain of domains) {
+        try {
+            localStorage.removeItem(`icon_cache_${domain}`);
+            await saveIconToCache(domain, true);
+            done++;
+        } catch(e) { done++; }
+    }
+    toast.remove();
+    showToast(`图标刷新完成，共处理 ${done} 个域名`);
+    await loadIcons();
+}
